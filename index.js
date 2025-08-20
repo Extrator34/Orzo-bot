@@ -2,7 +2,7 @@ const fs = require('fs')
 const path = require('path')
 const { Client, GatewayIntentBits, REST, Routes } = require('discord.js')
 
-const token = process.env.MTI3MzU2ODk5Mjg5NTgzMjE0OA.GC2m5l.aoj6Grharh4YKa5KjIfkqNynzzugz94-jBjP00cos'è il client id
+const token = process.env.MTI3MzU2ODk5Mjg5NTgzMjE0OA.GC2m5l.aoj6Grharh4YKa5KjIfkqNynzzugz94-jBjP00
   
 const clientId = process.env.1273568992895832148
 const guildId = process.env.GUILD_ID
@@ -157,3 +157,4 @@ main()
 // 5) npm start
 
 // il file data.json verrà creato nella stessa cartella e conterrà i personaggi
+
