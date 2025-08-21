@@ -36,7 +36,7 @@ const commands = [
   },
   {
     name: 'daily',
-    description: 'Riscuoti il bonus giornaliero per un personaggio',
+    description: 'Riscuoti il bonus giornaliero per tutti i tuoi personaggi',
     options: [ { name: 'name', type: 3, description: 'Nome del personaggio', required: true } ]
   },
   {
@@ -113,25 +113,41 @@ client.on('interactionCreate', async interaction => {
       return await saveAndReply(`Personaggio **${name}** creato con ${start} soldi`)
     }
 
-    if (interaction.commandName === 'daily') {
-      const name = interaction.options.getString('name')
-      const char = findCharacter(db, userId, name)
-      if (!char) return await saveAndReply('Personaggio non trovato', true)
-      const now = Date.now()
-      const DAY = 24 * 60 * 60 * 1000
-      const last = char.lastDaily ? new Date(char.lastDaily).getTime() : 0
-      if (now - last < DAY) {
-        const remainingMs = DAY - (now - last)
-        const hrs = Math.floor(remainingMs / (1000 * 60 * 60))
-        const mins = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60))
-        return await saveAndReply(`Hai già riscattato il giornaliero, riprova tra ${hrs} ore e ${mins} minuti`, true)
-      }
-      const DAILY_AMOUNT = 100
-      char.balance += DAILY_AMOUNT
-      char.lastDaily = new Date().toISOString()
-      saveDb(db)
-      return await saveAndReply(`Hai ricevuto ${DAILY_AMOUNT} soldi per **${char.name}**\nSaldo attuale: ${char.balance}`)
-    }
+   if (interaction.commandName === 'daily') {
+const userId = interaction.user.id
+const characters = db[userId]
+
+
+if (!characters || Object.keys(characters).length === 0) {
+await interaction.reply('Non hai ancora personaggi! Usa `/create` per crearne uno.')
+return
+}
+
+
+const now = Date.now()
+let totalEarned = 0
+const DAILY_AMOUNT = 100
+const messages = []
+
+
+for (const [name, char] of Object.entries(characters)) {
+if (!char.lastDaily || now - char.lastDaily >= 24 * 60 * 60 * 1000) {
+char.money += DAILY_AMOUNT
+char.lastDaily = now
+totalEarned += DAILY_AMOUNT
+messages.push(`${name} ha ricevuto ${DAILY_AMOUNT} monete. Totale: ${char.money}`)
+} else {
+const remaining = 24 * 60 * 60 * 1000 - (now - char.lastDaily)
+const hours = Math.floor(remaining / (1000 * 60 * 60))
+const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60))
+messages.push(`${name} deve aspettare ancora ${hours}h ${minutes}m per riscattare di nuovo.`)
+}
+}
+
+
+saveDb()
+await interaction.reply(messages.join('\n'))
+}
 
     if (interaction.commandName === 'balance') {
       const name = interaction.options.getString('name')
@@ -170,6 +186,7 @@ main()
 // 5) npm start
 
 // il file data.json verrà creato nella stessa cartella e conterrà i personaggi
+
 
 
 
