@@ -125,24 +125,16 @@ client.on("interactionCreate", async (interaction) => {
 
 if (interaction.commandName === "daily") {
   const chars = await Character.find({ userId: interaction.user.id });
-  if (chars.length === 0) {
-    await interaction.reply("❌ Non hai ancora personaggi.");
-    return;
-  }
-
-  const updated = await Promise.all(
-    chars.map(async (c) => {
-      c.money += 100; // soldi giornalieri
-      await c.save();
-      return c;
-    })
-  );
-
-  const list = updated.map(c => `- ${c.name}: ${c.money}💰`).join("\n");
-  await interaction.reply(`💵 Soldi giornalieri riscossi!\n${list}`);
+if (chars.length === 0) {
+  await interaction.reply("❌ Non hai ancora personaggi.");
+} else {
+  const list = chars.map((c) => `- ${c.name}: ${c.money}💰`).join("\n");
+  await interaction.reply(`📜 I tuoi personaggi:\n${list}`);
 }
 
 
+
 client.login(process.env.DISCORD_TOKEN);
+
 
 
