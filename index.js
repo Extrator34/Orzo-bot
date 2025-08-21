@@ -1,140 +1,109 @@
-import { Client, GatewayIntentBits, REST, Routes } from "discord.js"
-import mongoose from "mongoose"
+import { Client, GatewayIntentBits, REST, Routes } from "discord.js";
+import mongoose from "mongoose";
+import dotenv from "dotenv";
 
-// ---- CONNESSIONE A MONGO ----
-await mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
+// Carica le variabili d’ambiente (in locale, su Render le prende dalle Environment Variables)
+dotenv.config();
 
-console.log("MONGO_URI:", process.env.MONGO_URI ? "Trovata ✅" : "Mancante ❌");
+// ====== DEBUG VARIABILI ======
+console.log("🔎 Variabili lette:");
+console.log("DISCORD_TOKEN:", process.env.DISCORD_TOKEN ? "✔️ trovata" : "❌ mancante");
+console.log("CLIENT_ID:", process.env.CLIENT_ID ? "✔️ trovata" : "❌ mancante");
+console.log("GUILD_ID:", process.env.GUILD_ID ? "✔️ trovata" : "❌ mancante");
+console.log("MONGO_URI:", process.env.MONGO_URI ? "✔️ trovata" : "❌ mancante");
 
-// ---- SCHEMA PERSONAGGIO ----
+if (!process.env.MONGO_URI) {
+  console.error("❌ ERRORE: Variabile MONGO_URI non trovata. Controlla le Environment su Render!");
+  process.exit(1);
+}
+
+// ====== CONNESSIONE A MONGO ======
+try {
+  await mongoose.connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  });
+  console.log("✅ Connesso a MongoDB");
+} catch (err) {
+  console.error("❌ Errore connessione Mongo:", err);
+  process.exit(1);
+}
+
+// ====== SCHEMA PERSONAGGIO ======
 const characterSchema = new mongoose.Schema({
-  ownerId: String,
+  userId: String,
   name: String,
-  money: { type: Number, default: 100 },
-})
+  level: { type: Number, default: 1 },
+  xp: { type: Number, default: 0 },
+});
+const Character = mongoose.model("Character", characterSchema);
 
-const Character = mongoose.model("Character", characterSchema)
-
-// ---- DISCORD CLIENT ----
+// ====== BOT DISCORD ======
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
-})
+});
 
-// ---- COMANDI ----
+// Comandi slash
 const commands = [
   {
-    name: "crea",
+    name: "createcharacter",
     description: "Crea un nuovo personaggio",
     options: [
       {
-        type: 3,
-        name: "nome",
+        name: "name",
+        type: 3, // STRING
         description: "Nome del personaggio",
         required: true,
       },
     ],
   },
   {
-    name: "lista",
+    name: "mycharacters",
     description: "Mostra la lista dei tuoi personaggi",
   },
-  {
-    name: "daily",
-    description: "Riscuoti la ricompensa giornaliera per tutti i tuoi personaggi",
-  },
-]
+];
 
-// ---- REGISTRAZIONE COMANDI ----
-const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN)
+const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
 
-async function registerCommands() {
-  try {
-    await rest.put(
-      Routes.applicationGuildCommands(
-        process.env.CLIENT_ID,
-        process.env.GUILD_ID
-      ),
-      { body: commands }
-    )
-    console.log("✅ Comandi registrati")
-  } catch (error) {
-    console.error(error)
-  }
+try {
+  console.log("🔄 Aggiornamento comandi slash...");
+  await rest.put(
+    Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
+    { body: commands }
+  );
+  console.log("✅ Comandi slash registrati");
+} catch (err) {
+  console.error("❌ Errore registrazione comandi:", err);
 }
 
-// ---- EVENTO READY ----
-client.once("ready", () => {
-  console.log(`🤖 Loggato come ${client.user.tag}`)
-  registerCommands()
-})
+client.on("ready", () => {
+  console.log(`🤖 Loggato come ${client.user.tag}`);
+});
 
-// ---- HANDLER COMANDI ----
 client.on("interactionCreate", async (interaction) => {
-  if (!interaction.isChatInputCommand()) return
+  if (!interaction.isCommand()) return;
 
-  try {
-    if (interaction.commandName === "crea") {
-      const nome = interaction.options.getString("nome")
-      const nuovo = new Character({
-        ownerId: interaction.user.id,
-        name: nome,
-        money: 100,
-      })
-      await nuovo.save()
-      await interaction.reply({
-        content: `✅ Personaggio **${nome}** creato con 100 monete iniziali`,
-        ephemeral: true,
-      })
-    }
+  if (interaction.commandName === "createcharacter") {
+    const name = interaction.options.getString("name");
 
-    if (interaction.commandName === "lista") {
-      const personaggi = await Character.find({ ownerId: interaction.user.id })
-      if (personaggi.length === 0) {
-        return interaction.reply({
-          content: "Non hai ancora personaggi!",
-          ephemeral: true,
-        })
-      }
-      const lista = personaggi
-        .map((p) => `• ${p.name} — ${p.money} monete`)
-        .join("\n")
-      await interaction.reply({
-        content: `📜 I tuoi personaggi:\n${lista}`,
-        ephemeral: true,
-      })
-    }
+    const newChar = new Character({
+      userId: interaction.user.id,
+      name,
+    });
+    await newChar.save();
 
-    if (interaction.commandName === "daily") {
-      const personaggi = await Character.find({ ownerId: interaction.user.id })
-      if (personaggi.length === 0) {
-        return interaction.reply({
-          content: "Non hai personaggi da premiare!",
-          ephemeral: true,
-        })
-      }
-      for (const p of personaggi) {
-        p.money += 50
-        await p.save()
-      }
-      await interaction.reply({
-        content: `💰 Hai ricevuto 50 monete per ciascun personaggio (${personaggi.length} totali)!`,
-        ephemeral: true,
-      })
-    }
-  } catch (err) {
-    console.error("Errore comando:", err)
-    if (!interaction.replied) {
-      await interaction.reply({
-        content: "⚠️ Errore interno",
-        ephemeral: true,
-      })
+    await interaction.reply(`✅ Personaggio **${name}** creato!`);
+  }
+
+  if (interaction.commandName === "mycharacters") {
+    const chars = await Character.find({ userId: interaction.user.id });
+    if (chars.length === 0) {
+      await interaction.reply("❌ Non hai ancora personaggi.");
+    } else {
+      const list = chars.map((c) => `- ${c.name} (Lvl ${c.level}, XP ${c.xp})`).join("\n");
+      await interaction.reply(`📜 I tuoi personaggi:\n${list}`);
     }
   }
-})
+});
 
-// ---- LOGIN ----
-client.login(process.env.DISCORD_TOKEN)
-
+client.login(process.env.DISCORD_TOKEN);
