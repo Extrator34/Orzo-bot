@@ -1,27 +1,3 @@
-// file: package.json
-{
-  "name": "discord-economy-bot",
-  "version": "1.1.0",
-  "description": "Semplice bot economia per Discord in Node.js",
-  "main": "index.js",
-  "type": "module",
-  "scripts": {
-    "start": "node index.js"
-  },
-  "dependencies": {
-    "discord.js": "^14.15.3"
-  },
-  "engines": {
-    "node": "20.x"
-  }
-}
-
-// -----------------------------
-// file: index.js
-// Bot economia con persistenza su JSON
-// Comandi: /create, /daily, /balance, /list, /help
-// Compatibile con ESM e Render Web Service (mini server HTTP)
-
 import { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder } from 'discord.js'
 import fs from 'fs'
 import http from 'http'
@@ -216,3 +192,4 @@ http.createServer((req, res) => {
 // ---------------- Avvio ----------------
 await registerCommands()
 await client.login(token)
+
