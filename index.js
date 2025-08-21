@@ -1,3 +1,17 @@
+import http from "http";
+
+const PORT = process.env.PORT || 3000; // Render passa automaticamente una porta in PORT
+
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { "Content-Type": "text/plain" });
+  res.end("Bot Discord attivo ✅");
+});
+
+server.listen(PORT, () => {
+  console.log(`🌐 Server web fittizio in ascolto su porta ${PORT}`);
+});
+
+
 import { Client, GatewayIntentBits, REST, Routes } from "discord.js";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
@@ -107,3 +121,4 @@ client.on("interactionCreate", async (interaction) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
