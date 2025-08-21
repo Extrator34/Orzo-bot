@@ -29,8 +29,6 @@ try {
   process.exit(1);
 }
 
-
-
 // ====== SCHEMA PERSONAGGIO ======
 const characterSchema = new mongoose.Schema({
   userId: String,
@@ -109,5 +107,3 @@ client.on("interactionCreate", async (interaction) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
-
-
