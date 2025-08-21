@@ -1,12 +1,30 @@
-import { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder } from "discord.js"
-import fs from "fs"
+// index.js
 
-// === CONFIG ===
+import { 
+  Client, 
+  GatewayIntentBits, 
+  REST, 
+  Routes, 
+  SlashCommandBuilder 
+} from "discord.js"
+import fs from "fs"
+import http from "http"
+
+// === Variabili ambiente ===
 const token = process.env.DISCORD_TOKEN
 const clientId = process.env.CLIENT_ID
-const guildId = process.env.GUILD_ID
-const DB_FILE = "./database.json"
 
+// === Database (JSON) ===
+const DB_FILE = "./database.json"
+let db = {}
+
+if (fs.existsSync(DB_FILE)) {
+  db = JSON.parse(fs.readFileSync(DB_FILE, "utf8"))
+}
+
+function saveDb() {
+  fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), "utf8")
+}
 
 const http = require('http')
 
@@ -21,138 +39,79 @@ http.createServer((req, res) => {
 })
 
 
-// === DATABASE IN MEMORIA ===
-let db = {}
-
-// Carica dal file se esiste
-if (fs.existsSync(DB_FILE)) {
-  try {
-    db = JSON.parse(fs.readFileSync(DB_FILE))
-  } catch (err) {
-    console.error("Errore nel leggere il database.json:", err)
-    db = {}
-  }
-}
-
-// Funzione per salvare sul file
-function saveDb() {
-  fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2))
-}
-
-// === BOT CLIENT ===
+// === Setup bot ===
 const client = new Client({ intents: [GatewayIntentBits.Guilds] })
 
-// === COMANDI ===
+client.on("clientReady", () => {
+  console.log(`✅ Logged in as ${client.user.tag}`)
+})
+
+// === Comandi ===
 const commands = [
   new SlashCommandBuilder()
-    .setName("create")
-    .setDescription("Crea un nuovo personaggio")
-    .addStringOption(opt => opt.setName("name").setDescription("Nome del personaggio").setRequired(true))
-    .addIntegerOption(opt => opt.setName("start").setDescription("Soldi iniziali").setRequired(false)),
-
+    .setName("ping")
+    .setDescription("Risponde con Pong!"),
+  
   new SlashCommandBuilder()
     .setName("daily")
-    .setDescription("Riscatta i soldi giornalieri per TUTTI i tuoi personaggi"),
-
-  new SlashCommandBuilder()
-    .setName("balance")
-    .setDescription("Mostra i soldi di un personaggio")
-    .addStringOption(opt => opt.setName("name").setDescription("Nome del personaggio").setRequired(true)),
-
-  new SlashCommandBuilder()
-    .setName("list")
-    .setDescription("Mostra tutti i tuoi personaggi")
+    .setDescription("Ottieni la ricompensa giornaliera per i tuoi personaggi")
 ].map(cmd => cmd.toJSON())
 
-// === REGISTRA I COMANDI ===
+// Registra i comandi globali
 const rest = new REST({ version: "10" }).setToken(token)
 
 async function registerCommands() {
-  if (guildId) {
-    await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: commands })
-    console.log("Comandi registrati nel server")
-  } else {
+  try {
+    console.log("📦 Registro i comandi globalmente...")
     await rest.put(Routes.applicationCommands(clientId), { body: commands })
-    console.log("Comandi registrati globalmente")
+    console.log("✅ Comandi registrati")
+  } catch (error) {
+    console.error("❌ Errore registrazione comandi:", error)
   }
 }
 
-// === BOT EVENTS ===
-client.once("clientReady", c => {
-  console.log(`✅ Logged in as ${c.user.tag}`)
-})
+registerCommands()
 
+// === Gestione interazioni ===
 client.on("interactionCreate", async interaction => {
   if (!interaction.isChatInputCommand()) return
 
-  const { commandName } = interaction
-  const userId = interaction.user.id
+  const { commandName, user } = interaction
 
-  // Inizializza se l’utente non ha ancora personaggi
-  if (!db[userId]) db[userId] = {}
+  if (commandName === "ping") {
+    await interaction.reply("Pong!")
+  }
 
-  if (commandName === "create") {
-    const name = interaction.options.getString("name")
-    const start = interaction.options.getInteger("start") ?? 1000
+  if (commandName === "daily") {
+    const userId = user.id
 
-    if (db[userId][name]) {
-      await interaction.reply("⚠️ Hai già un personaggio con questo nome.")
-      return
+    if (!db[userId]) {
+      db[userId] = { characters: {} }
     }
 
-    db[userId][name] = { money: start, lastDaily: 0 }
+    // Esempio: aggiungi 100 monete a TUTTI i personaggi del giocatore
+    const chars = db[userId].characters
+    if (Object.keys(chars).length === 0) {
+      chars["personaggio1"] = { coins: 0 }
+    }
+
+    for (const charName in chars) {
+      chars[charName].coins += 100
+    }
+
     saveDb()
 
-    await interaction.reply(`✅ Personaggio **${name}** creato con ${start} soldi.`)
-
-  } else if (commandName === "daily") {
-    const now = Date.now()
-    let reply = "💰 **Daily Rewards:**\n"
-
-    let hasCharacters = false
-    for (const [name, pg] of Object.entries(db[userId])) {
-      hasCharacters = true
-      if (now - pg.lastDaily >= 24 * 60 * 60 * 1000) {
-        pg.money += 100
-        pg.lastDaily = now
-        reply += `+100 a **${name}** → Totale: ${pg.money}\n`
-      } else {
-        reply += `❌ **${name}** ha già riscosso oggi\n`
-      }
-    }
-
-    if (!hasCharacters) {
-      reply = "⚠️ Non hai personaggi! Crea un pg con `/create`."
-    } else {
-      saveDb()
-    }
-
-    await interaction.reply(reply)
-
-  } else if (commandName === "balance") {
-    const name = interaction.options.getString("name")
-    const pg = db[userId][name]
-    if (!pg) {
-      await interaction.reply("⚠️ Personaggio non trovato.")
-      return
-    }
-    await interaction.reply(`💵 **${name}** ha ${pg.money} soldi.`)
-
-  } else if (commandName === "list") {
-    const chars = Object.entries(db[userId])
-    if (chars.length === 0) {
-      await interaction.reply("⚠️ Non hai personaggi!")
-      return
-    }
-    let reply = "📜 I tuoi personaggi:\n"
-    for (const [name, pg] of chars) {
-      reply += `- **${name}**: ${pg.money} soldi\n`
-    }
-    await interaction.reply(reply)
+    await interaction.reply(`💰 Hai ricevuto 100 monete per ciascun personaggio!`)
   }
 })
 
-// === START ===
-await registerCommands()
-client.login(token)
+// === HTTP server per Render (keep-alive) ===
+http.createServer((req, res) => {
+  res.writeHead(200, { "Content-Type": "text/plain" })
+  res.end("Bot is running\n")
+}).listen(process.env.PORT || 3000, () => {
+  console.log("🌐 Web server attivo")
+})
 
+// === Avvia il bot ===
+client.login(token)
