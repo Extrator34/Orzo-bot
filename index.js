@@ -19,12 +19,17 @@ const DB_FILE = "./database.json"
 let db = {}
 
 if (fs.existsSync(DB_FILE)) {
-  db = JSON.parse(fs.readFileSync(DB_FILE, "utf8"))
+  try {
+    const raw = fs.readFileSync(DB_FILE, "utf8")
+    db = raw.trim() ? JSON.parse(raw) : {}
+  } catch (err) {
+    console.error("❌ Errore nel leggere database.json:", err)
+    db = {}
+  }
+} else {
+  fs.writeFileSync(DB_FILE, "{}", "utf8")
 }
 
-function saveDb() {
-  fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), "utf8")
-}
 
 
 // === Setup bot ===
@@ -103,4 +108,5 @@ http.createServer((req, res) => {
 
 // === Avvia il bot ===
 client.login(token)
+
 
