@@ -7,7 +7,7 @@ await mongoose.connect(process.env.MONGO_URI, {
   useUnifiedTopology: true,
 })
 
-console.log("✅ Connesso a MongoDB")
+console.log("MONGO_URI:", process.env.MONGO_URI ? "Trovata ✅" : "Mancante ❌");
 
 // ---- SCHEMA PERSONAGGIO ----
 const characterSchema = new mongoose.Schema({
@@ -137,3 +137,4 @@ client.on("interactionCreate", async (interaction) => {
 
 // ---- LOGIN ----
 client.login(process.env.DISCORD_TOKEN)
+
