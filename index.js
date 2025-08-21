@@ -7,6 +7,20 @@ const clientId = process.env.CLIENT_ID
 const guildId = process.env.GUILD_ID
 const DB_FILE = "./database.json"
 
+
+const http = require('http')
+
+const PORT = process.env.PORT || 3000
+
+// Mini server che risponde a Render
+http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' })
+  res.end('Bot is running!')
+}).listen(PORT, () => {
+  console.log(`Web service attivo su porta ${PORT}`)
+})
+
+
 // === DATABASE IN MEMORIA ===
 let db = {}
 
@@ -141,3 +155,4 @@ client.on("interactionCreate", async interaction => {
 // === START ===
 await registerCommands()
 client.login(token)
+
