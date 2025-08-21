@@ -121,7 +121,8 @@ client.on("interactionCreate", async (interaction) => {
       await interaction.reply(`📜 I tuoi personaggi:\n${list}`);
     }
   }
-});
+
+
 
 if (interaction.commandName === "daily") {
   const chars = await Character.find({ userId: interaction.user.id });
@@ -132,9 +133,11 @@ if (chars.length === 0) {
   await interaction.reply(`📜 I tuoi personaggi:\n${list}`);
 }
 
+});
 
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
