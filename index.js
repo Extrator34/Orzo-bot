@@ -26,18 +26,6 @@ function saveDb() {
   fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), "utf8")
 }
 
-const http = require('http')
-
-const PORT = process.env.PORT || 3000
-
-// Mini server che risponde a Render
-http.createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/plain' })
-  res.end('Bot is running!')
-}).listen(PORT, () => {
-  console.log(`Web service attivo su porta ${PORT}`)
-})
-
 
 // === Setup bot ===
 const client = new Client({ intents: [GatewayIntentBits.Guilds] })
@@ -115,3 +103,4 @@ http.createServer((req, res) => {
 
 // === Avvia il bot ===
 client.login(token)
+
