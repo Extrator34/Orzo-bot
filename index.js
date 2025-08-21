@@ -124,36 +124,34 @@ client.on("interactionCreate", async (interaction) => {
   }
 
   const now = new Date();
-  const oneDay = 24 * 60 * 60 * 1000; // 24 ore in millisecondi
+  const oneDay = 24 * 60 * 60 * 1000;
 
-  const updated = [];
+  const messages = [];
 
   for (const c of chars) {
     if (c.lastDaily && now - c.lastDaily < oneDay) {
       const remaining = oneDay - (now - c.lastDaily);
       const hours = Math.floor(remaining / (1000 * 60 * 60));
       const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
-      await interaction.reply(`⏳ Il personaggio **${c.name}** deve aspettare ${hours}h ${minutes}m per riscattare di nuovo.`);
-      continue;
+      messages.push(`⏳ Il personaggio **${c.name}** deve aspettare ${hours}h ${minutes}m`);
+    } else {
+      c.money += 100;
+      c.lastDaily = now;
+      await c.save();
+      messages.push(`💵 Soldi riscossi per **${c.name}**: ${c.money}💰`);
     }
-
-    c.money += 100;       // soldi giornalieri
-    c.lastDaily = now;    // aggiorna cooldown
-    await c.save();
-    updated.push(c);
   }
 
-  if (updated.length > 0) {
-    const list = updated.map((c) => `- ${c.name}: ${c.money}💰`).join("\n");
-    await interaction.reply(`💵 Soldi giornalieri riscossi!\n${list}`);
-  }
+  await interaction.reply(messages.join("\n"));
 }
+
 
 });
 
 
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
