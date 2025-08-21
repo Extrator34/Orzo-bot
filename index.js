@@ -29,6 +29,19 @@ try {
   process.exit(1);
 }
 
+const http = require('http')
+
+const PORT = process.env.PORT || 3000
+
+// Mini server che risponde a Render
+http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' })
+  res.end('Bot is running!')
+}).listen(PORT, () => {
+  console.log(`Web service attivo su porta ${PORT}`)
+})
+
+
 // ====== SCHEMA PERSONAGGIO ======
 const characterSchema = new mongoose.Schema({
   userId: String,
@@ -107,3 +120,4 @@ client.on("interactionCreate", async (interaction) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
