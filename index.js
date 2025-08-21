@@ -122,8 +122,6 @@ client.on("interactionCreate", async (interaction) => {
     }
   }
 
-
-
 if (interaction.commandName === "daily") {
   const chars = await Character.find({ userId: interaction.user.id });
 if (chars.length === 0) {
@@ -137,6 +135,7 @@ if (chars.length === 0) {
 
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
