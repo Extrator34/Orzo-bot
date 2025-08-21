@@ -1,12 +1,24 @@
 const fs = require('fs')
 const path = require('path')
 const { Client, GatewayIntentBits, REST, Routes } = require('discord.js')
-const port = process.env.PORT || 4000 
 
 const token = process.env.DISCORD_TOKEN
   
 const clientId = process.env.CLIENT_ID
 const guildId = process.env.GUILD_ID
+
+const http = require('http')
+
+const PORT = process.env.PORT || 3000
+
+// Mini server che risponde a Render
+http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' })
+  res.end('Bot is running!')
+}).listen(PORT, () => {
+  console.log(`Web service attivo su porta ${PORT}`)
+})
+
 
 if (!token || !clientId) {
   console.log('Imposta le variabili d\'ambiente DISCORD_TOKEN e CLIENT_ID prima di avviare il bot')
@@ -158,6 +170,7 @@ main()
 // 5) npm start
 
 // il file data.json verrà creato nella stessa cartella e conterrà i personaggi
+
 
 
 
