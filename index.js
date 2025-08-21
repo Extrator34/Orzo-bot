@@ -47,8 +47,7 @@ try {
 const characterSchema = new mongoose.Schema({
   userId: String,
   name: String,
-  level: { type: Number, default: 1 },
-  xp: { type: Number, default: 0 },
+  money: { type: Number, default: 1000 },
 });
 const Character = mongoose.model("Character", characterSchema);
 
@@ -60,7 +59,7 @@ const client = new Client({
 // Comandi slash
 const commands = [
   {
-    name: "createcharacter",
+    name: "create",
     description: "Crea un nuovo personaggio",
     options: [
       {
@@ -72,8 +71,12 @@ const commands = [
     ],
   },
   {
-    name: "mycharacters",
+    name: "list",
     description: "Mostra la lista dei tuoi personaggi",
+  },
+  {
+    name: "daily",
+    description: "Ottieni soldi gionalmente",
   },
 ];
 
@@ -97,7 +100,7 @@ client.on("ready", () => {
 client.on("interactionCreate", async (interaction) => {
   if (!interaction.isCommand()) return;
 
-  if (interaction.commandName === "createcharacter") {
+  if (interaction.commandName === "create") {
     const name = interaction.options.getString("name");
 
     const newChar = new Character({
@@ -109,16 +112,37 @@ client.on("interactionCreate", async (interaction) => {
     await interaction.reply(`✅ Personaggio **${name}** creato!`);
   }
 
-  if (interaction.commandName === "mycharacters") {
+  if (interaction.commandName === "list") {
     const chars = await Character.find({ userId: interaction.user.id });
     if (chars.length === 0) {
       await interaction.reply("❌ Non hai ancora personaggi.");
     } else {
-      const list = chars.map((c) => `- ${c.name} (Lvl ${c.level}, XP ${c.xp})`).join("\n");
+      const list = chars.map((c) => `- ${c.name}: ${c.money}💰`).join("\n");
       await interaction.reply(`📜 I tuoi personaggi:\n${list}`);
     }
   }
 });
 
+if (interaction.commandName === "daily") {
+  const chars = await Character.find({ userId: interaction.user.id });
+  if (chars.length === 0) {
+    await interaction.reply("❌ Non hai ancora personaggi.");
+    return;
+  }
+
+  const updated = await Promise.all(
+    chars.map(async (c) => {
+      c.money += 100; // soldi giornalieri
+      await c.save();
+      return c;
+    })
+  );
+
+  const list = updated.map(c => `- ${c.name}: ${c.money}💰`).join("\n");
+  await interaction.reply(`💵 Soldi giornalieri riscossi!\n${list}`);
+}
+
+
 client.login(process.env.DISCORD_TOKEN);
+
 
