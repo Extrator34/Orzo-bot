@@ -1,6 +1,7 @@
 const fs = require('fs')
 const path = require('path')
 const { Client, GatewayIntentBits, REST, Routes } = require('discord.js')
+const port = process.env.PORT || 4000 
 
 const token = process.env.DISCORD_TOKEN
   
@@ -157,5 +158,6 @@ main()
 // 5) npm start
 
 // il file data.json verrà creato nella stessa cartella e conterrà i personaggi
+
 
 
