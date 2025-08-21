@@ -36,8 +36,7 @@ const commands = [
   },
   {
     name: 'daily',
-    description: 'Riscuoti il bonus giornaliero per tutti i tuoi personaggi',
-    options: [ { name: 'name', type: 3, description: 'Nome del personaggio', required: true } ]
+    description: 'Riscuoti il bonus giornaliero per tutti i tuoi personaggi'
   },
   {
     name: 'balance',
@@ -186,6 +185,7 @@ main()
 // 5) npm start
 
 // il file data.json verrà creato nella stessa cartella e conterrà i personaggi
+
 
 
 
