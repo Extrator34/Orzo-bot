@@ -104,35 +104,38 @@ const commands = [
     ],
   },
   {
-    name: "pay",
-    description: "Paga un altro personaggio",
-    options: [
-      {
-        name: "from_name",
-        type: 3, // STRING
-        description: "Nome del tuo personaggio che paga",
-        required: true,
-      },
-      {
-        name: "to_user",
-        type: 6, // USER
-        description: "Utente che riceve il pagamento",
-        required: true,
-      },
-      {
-        name: "to_name",
-        type: 3, // STRING
-        description: "Nome del personaggio che riceve",
-        required: true,
-      },
-      {
-        name: "amount",
-        type: 4, // INTEGER
-        description: "Quantità di soldi da trasferire",
-        required: true,
-      },
-    ],
-  },
+  name: "pay",
+  description: "Paga un altro personaggio",
+  options: [
+    {
+      name: "from_name",
+      type: 3, // STRING
+      description: "Nome del tuo personaggio che paga",
+      required: true,
+      autocomplete: true,
+    },
+    {
+      name: "to_user",
+      type: 6, // USER
+      description: "Utente che riceve il pagamento",
+      required: true,
+    },
+    {
+      name: "to_name",
+      type: 3, // STRING
+      description: "Nome del personaggio che riceve",
+      required: true,
+      autocomplete: true,
+    },
+    {
+      name: "amount",
+      type: 4, // INTEGER
+      description: "Quantità di soldi da trasferire",
+      required: true,
+    },
+  ],
+}
+
 ];
 
 const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
@@ -153,6 +156,34 @@ client.on("ready", () => {
 });
 
 client.on("interactionCreate", async (interaction) => {
+
+   if (interaction.isAutocomplete()) {
+    const focused = interaction.options.getFocused(true);
+    let choices = [];
+
+    if (focused.name === "from_name") {
+      const chars = await Character.find({ userId: interaction.user.id });
+      choices = chars.map(c => ({
+        name: `${c.name} (tuo PG)`, 
+        value: c.name
+      }));
+    }
+
+    if (focused.name === "to_name") {
+      const toUser = interaction.options.getUser("to_user");
+      if (toUser) {
+        const chars = await Character.find({ userId: toUser.id });
+        choices = chars.map(c => ({
+          name: `${c.name} (${toUser.username})`, 
+          value: c.name
+        }));
+      }
+    }
+
+    await interaction.respond(choices.slice(0, 25));
+    return; // importante: esci qui, sennò va a finire nei comandi
+  }
+  
   if (!interaction.isCommand()) return;
 
   if (interaction.commandName === "create") {
@@ -245,3 +276,4 @@ client.on("interactionCreate", async (interaction) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
