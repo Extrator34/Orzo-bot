@@ -270,6 +270,12 @@ client.on("interactionCreate", async (interaction) => {
     const toName = interaction.options.getString("to_name");
     const amount = interaction.options.getInteger("amount");
 
+      // controllo su importo
+  if (amount <= 0) {
+    await interaction.reply("❌ L'importo deve essere un numero positivo maggiore di zero.");
+    return;
+  }
+
     // trova personaggio mittente
     const fromChar = await Character.findOne({ userId: interaction.user.id, name: fromName });
     if (!fromChar) {
@@ -328,6 +334,7 @@ client.on("interactionCreate", async (interaction) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
