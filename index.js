@@ -187,7 +187,7 @@ const commands = [
 
   {
   name: "addexp",
-  description: "Aggiungi punti esperienza a un personaggio",
+  description: "(ADMIN ONLY) Aggiungi punti esperienza a un personaggio",
   options: [
     {
       name: "to_user",
@@ -534,6 +534,7 @@ if (interaction.commandName === "list") {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
