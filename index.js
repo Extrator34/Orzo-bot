@@ -358,9 +358,87 @@ client.on("interactionCreate", async (interaction) => {
 }
 
 
+  if (interaction.commandName === "addexp") {
+  const user = interaction.options.getUser("to_user");
+  const name = interaction.options.getString("to_name");
+  const amount = interaction.options.getInteger("amount");
+
+  if (amount <= 0) {
+    await interaction.reply("❌ L'esperienza deve essere un numero positivo maggiore di zero.");
+    return;
+  }
+
+  const char = await Character.findOne({ userId: user.id, name });
+  if (!char) {
+    await interaction.reply(`❌ Personaggio **${name}** non trovato per ${user.username}.`);
+    return;
+  }
+
+  // tabella livelli
+  const expTable = [
+    [0, 1], [2000, 2], [5000, 3], [9000, 4], [14000, 5], [20000, 6],
+    [27000, 7], [35000, 8], [44000, 9], [54000, 10], [65000, 11],
+    [77000, 12], [90000, 13], [104000, 14], [119000, 15], [135000, 16],
+    [152000, 17], [170000, 18], [189000, 19], [209000, 20], [230000, 21],
+    [252000, 22], [275000, 23], [299000, 24], [324000, 25], [350000, 26],
+    [377000, 27], [405000, 28], [434000, 29], [464000, 30], [495000, 31],
+    [527000, 32], [560000, 33], [594000, 34], [629000, 35], [665000, 36],
+    [702000, 37], [740000, 38], [779000, 39], [819000, 40], [860000, 41],
+    [902000, 42], [945000, 43], [989000, 44], [1034000, 45], [1080000, 46],
+    [1127000, 47], [1175000, 48], [1224000, 49], [1274000, 50],
+    [1325000, 51], [1377000, 52], [1430000, 53], [1484000, 54],
+    [1539000, 55], [1595000, 56], [1652000, 57], [1710000, 58],
+    [1769000, 59], [1829000, 60], [1890000, 61], [1952000, 62],
+    [2015000, 63], [2079000, 64], [2144000, 65], [2210000, 66],
+    [2277000, 67], [2345000, 68], [2414000, 69], [2484000, 70],
+    [2555000, 71], [2627000, 72], [2700000, 73], [2774000, 74],
+    [2849000, 75], [2925000, 76], [3002000, 77], [3080000, 78],
+    [3159000, 79], [3239000, 80], [3320000, 81], [3402000, 82],
+    [3485000, 83], [3569000, 84], [3654000, 85], [3740000, 86],
+    [3827000, 87], [3915000, 88], [4004000, 89], [4094000, 90],
+    [4185000, 91], [4277000, 92], [4370000, 93], [4464000, 94],
+    [4559000, 95], [4655000, 96], [4752000, 97], [4850000, 98],
+    [4949000, 99], [5049000, 100]
+  ];
+
+  const maxExp = 5049000;
+
+  // aggiunge exp
+  char.expTotale += amount;
+  if (char.expTotale > maxExp) char.expTotale = maxExp;
+
+  // calcolo nuovo livello
+  let newLevel = 1;
+  for (let i = expTable.length - 1; i >= 0; i--) {
+    if (char.expTotale >= expTable[i][0]) {
+      newLevel = expTable[i][1];
+      char.expMostrata = char.expTotale - expTable[i][0];
+      break;
+    }
+  }
+
+  const oldLevel = char.level;
+  char.level = newLevel;
+  await char.save();
+
+  if (newLevel > oldLevel) {
+    await interaction.reply(
+      `🎉 Congratulazioni! **${char.name}** è salito al livello **${newLevel}**!\n` +
+      `Exp attuale: ${char.expMostrata} / prossimo livello`
+    );
+  } else {
+    await interaction.reply(
+      `✅ Aggiunti **${amount} exp** a **${char.name}**.\n` +
+      `Livello attuale: ${char.level} | Exp mostrata: ${char.expMostrata}`
+    );
+  }
+}
+
+
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
