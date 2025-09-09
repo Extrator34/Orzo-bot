@@ -29,10 +29,8 @@ if (!process.env.MONGO_URI) {
 
 // ====== CONNESSIONE A MONGO ======
 try {
-  await mongoose.connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  });
+await mongoose.connect(process.env.MONGO_URI);
+
   console.log("✅ Connesso a MongoDB");
 } catch (err) {
   console.error("❌ Errore connessione Mongo:", err);
@@ -256,7 +254,7 @@ try {
   console.error("❌ Errore registrazione comandi:", err);
 }
 
-client.on("ready", () => {
+client.on("clientReady", () => {
   console.log(`🤖 Loggato come ${client.user.tag}`);
 });
 
@@ -526,6 +524,7 @@ if (interaction.commandName === "list") {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
