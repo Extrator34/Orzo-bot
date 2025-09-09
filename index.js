@@ -102,23 +102,6 @@ const commands = [
         description: "Quantità di soldi da aggiungere",
         required: true,
       },
-      {
-        name: "rename",
-        description: "Rinomina un tuo personaggio",
-        options: [
-      {
-        name: "from_name",
-        type: 3, // STRING
-        description: "Il tuo personaggio da rinominare",
-        required: true,
-        autocomplete: true
-      },
-      {
-        name: "name",
-        type: 3,
-        description: "Nuovo nome del personaggio",
-        required: true,
-      },
     ],
   },
 {
@@ -153,6 +136,27 @@ const commands = [
     },
   ],
 },
+
+  {
+  name: "rename",
+  description: "Rinomina un tuo personaggio",
+  options: [
+    {
+      name: "from_name",
+      type: 3, // STRING
+      description: "Il tuo personaggio da rinominare",
+      required: true,
+      autocomplete: true
+    },
+    {
+      name: "name",
+      type: 3,
+      description: "Nuovo nome del personaggio",
+      required: true,
+    },
+  ],
+},
+
 
 
 ];
@@ -297,9 +301,36 @@ client.on("interactionCreate", async (interaction) => {
       `Saldo aggiornato: ${fromChar.name} → ${fromChar.money}💰 | ${toChar.name} → ${toChar.money}💰`
     );
   }
+
+  if (interaction.commandName === "rename") {
+  const fromName = interaction.options.getString("from_name");
+  const newName = interaction.options.getString("name");
+
+  // Cerca il pg
+  const char = await Character.findOne({ userId: interaction.user.id, name: fromName });
+  if (!char) {
+    await interaction.reply(`❌ Non hai nessun personaggio chiamato **${fromName}**.`);
+    return;
+  }
+
+  // Controllo se esiste già un altro pg con lo stesso nome
+  const existing = await Character.findOne({ userId: interaction.user.id, name: newName });
+  if (existing) {
+    await interaction.reply(`❌ Hai già un personaggio chiamato **${newName}**.`);
+    return;
+  }
+
+  // Aggiorna il nome
+  char.name = newName;
+  await char.save();
+
+  await interaction.reply(`✅ Il personaggio **${fromName}** è stato rinominato in **${newName}**!`);
+}
+
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
