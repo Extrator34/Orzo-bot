@@ -43,8 +43,14 @@ try {
 const characterSchema = new mongoose.Schema({
   userId: String,
   name: String,
-  money: { type: Number, default: 1000 },
-  lastDaily: { type: Date, default: null }
+  money: { type: Number, default: 500 },
+  karma: {type: Number, default: 0},
+  hpMax: {type: Number, default: 500 },
+  level: {type: Number, default: 1},
+  expTotale: {type: Number, default: 0},
+  expMostrata: {type: Number, default: 0},
+  
+  
 });
 const Character = mongoose.model("Character", characterSchema);
 
@@ -71,19 +77,11 @@ const commands = [
     name: "list",
     description: "Mostra la lista dei tuoi personaggi",
   },
-  {
-    name: "daily",
-    description: "Ottieni soldi giornalieri",
-  },
 ];
 
 const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
 
 try {
-  // 🗑️ Elimina TUTTI i comandi globali
-  console.log("🗑️ Eliminazione comandi globali...");
-  await rest.put(Routes.applicationCommands(process.env.CLIENT_ID), { body: [] });
-  console.log("✅ Tutti i comandi globali eliminati");
 
   // 🔄 Registra solo i comandi nella guild
   console.log("🔄 Aggiornamento comandi slash (guild)...");
@@ -120,33 +118,7 @@ client.on("interactionCreate", async (interaction) => {
     }
   }
 
-  if (interaction.commandName === "daily") {
-    const chars = await Character.find({ userId: interaction.user.id });
-    if (chars.length === 0) {
-      await interaction.reply("❌ Non hai ancora personaggi.");
-      return;
-    }
-
-    const now = new Date();
-    const oneDay = 24 * 60 * 60 * 1000;
-    const messages = [];
-
-    for (const c of chars) {
-      if (c.lastDaily && now - c.lastDaily < oneDay) {
-        const remaining = oneDay - (now - c.lastDaily);
-        const hours = Math.floor(remaining / (1000 * 60 * 60));
-        const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
-        messages.push(`⏳ **${c.name}** deve aspettare ${hours}h ${minutes}m`);
-      } else {
-        c.money += 100;
-        c.lastDaily = now;
-        await c.save();
-        messages.push(`💵 Riscossi soldi per **${c.name}**: ${c.money}💰`);
-      }
-    }
-
-    await interaction.reply(messages.join("\n"));
-  }
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
