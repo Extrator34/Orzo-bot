@@ -259,7 +259,7 @@ client.on("clientReady", () => {
 });
 
 client.on("interactionCreate", async (interaction) => {
-
+  try {
   if (interaction.isAutocomplete()) {
   const focused = interaction.options.getFocused(true);
   let choices = [];
@@ -287,7 +287,7 @@ client.on("interactionCreate", async (interaction) => {
     }
   }
 
-  await interaction.respond(choices.slice(0, 25));
+  await interaction.respond(choices.slice(0, 25).length ? choices.slice(0, 25) : [{ name: "Nessun risultato", value: "none" }]);
   return;
 }
 
@@ -520,11 +520,21 @@ if (interaction.commandName === "list") {
   );
 }
 
-  
+   } catch (err) {
+    console.error("❌ Errore in interactionCreate:", err);
+
+    // tenta di inviare un messaggio all’utente se possibile
+    if (interaction.isRepliable()) {
+      try {
+        await interaction.reply("⚠️ Errore interno, riprova più tardi.");
+      } catch {}
+    }
+  }
 
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
