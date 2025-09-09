@@ -157,6 +157,33 @@ const commands = [
   ],
 },
 
+  {
+  name: "addexp",
+  description: "Aggiungi punti esperienza a un personaggio",
+  options: [
+    {
+      name: "to_user",
+      type: 6, // USER
+      description: "Utente proprietario del personaggio",
+      required: true,
+    },
+    {
+      name: "to_name",
+      type: 3, // STRING
+      description: "Nome del personaggio",
+      required: true,
+      autocomplete: true
+    },
+    {
+      name: "amount",
+      type: 4, // INTEGER
+      description: "Quantità di exp da aggiungere",
+      required: true,
+    },
+  ],
+}
+
+
 
 
 ];
@@ -334,6 +361,7 @@ client.on("interactionCreate", async (interaction) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
