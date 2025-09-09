@@ -44,14 +44,12 @@ const characterSchema = new mongoose.Schema({
   userId: String,
   name: String,
   money: { type: Number, default: 500 },
-  karma: {type: Number, default: 0},
-  hpMax: {type: Number, default: 500 },
-  level: {type: Number, default: 1},
-  expTotale: {type: Number, default: 0},
-  expMostrata: {type: Number, default: 0},
+  karma: { type: Number, default: 0 },
+  hpMax: { type: Number, default: 500 },
+  level: { type: Number, default: 1 },
+  expTotale: { type: Number, default: 0 },
+  expMostrata: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now },
-  
-  
 });
 const Character = mongoose.model("Character", characterSchema);
 
@@ -60,7 +58,10 @@ const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
 });
 
-// Comandi slash
+// ID del ruolo richiesto per usare /addmoney
+const ADMIN_ROLE_ID = "123456789012345678"; // <-- sostituisci con il tuo
+
+// ====== COMANDI SLASH ======
 const commands = [
   {
     name: "create",
@@ -78,13 +79,35 @@ const commands = [
     name: "list",
     description: "Mostra la lista dei tuoi personaggi",
   },
+  {
+    name: "addmoney",
+    description: "Aggiungi soldi a un personaggio",
+    options: [
+      {
+        name: "user",
+        type: 6, // USER
+        description: "Utente proprietario del personaggio",
+        required: true,
+      },
+      {
+        name: "name",
+        type: 3, // STRING
+        description: "Nome del personaggio",
+        required: true,
+      },
+      {
+        name: "amount",
+        type: 4, // INTEGER
+        description: "Quantità di soldi da aggiungere",
+        required: true,
+      },
+    ],
+  },
 ];
 
 const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
 
 try {
-
-  // 🔄 Registra solo i comandi nella guild
   console.log("🔄 Aggiornamento comandi slash (guild)...");
   await rest.put(
     Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
@@ -114,18 +137,43 @@ client.on("interactionCreate", async (interaction) => {
     if (chars.length === 0) {
       await interaction.reply("❌ Non hai ancora personaggi.");
     } else {
-      const list = chars.map((c) => `- ${c.name} 
+      const list = chars
+        .map(
+          (c) => `- ${c.name} 
   Livello: ${c.level}
+  Soldi: ${c.money}💰
   Exp per il prossimo livello: TODO
-  -----------------------------`).join("\n");
+  -----------------------------`
+        )
+        .join("\n");
       await interaction.reply(`📜 I tuoi personaggi:\n${list}`);
     }
   }
 
+  if (interaction.commandName === "addmoney") {
+    // Controllo ruolo
+    if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
+      await interaction.reply("❌ Non hai il permesso per usare questo comando.");
+      return;
+    }
+
+    const user = interaction.options.getUser("user");
+    const name = interaction.options.getString("name");
+    const amount = interaction.options.getInteger("amount");
+
+    const character = await Character.findOne({ userId: user.id, name });
+    if (!character) {
+      await interaction.reply(`❌ Personaggio **${name}** non trovato per ${user.username}.`);
+      return;
+    }
+
+    character.money += amount;
+    await character.save();
+
+    await interaction.reply(
+      `💰 Aggiunti **${amount}** soldi al personaggio **${character.name}** di ${user.username}. Totale: ${character.money}💰`
+    );
+  }
 });
 
 client.login(process.env.DISCORD_TOKEN);
-
-
-
-
