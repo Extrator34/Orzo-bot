@@ -81,19 +81,20 @@ const commands = [
   },
   {
     name: "addmoney",
-    description: "Aggiungi soldi a un personaggio",
+    description: "(ADMIN ONLY) Aggiungi soldi a un personaggio",
     options: [
       {
-        name: "user",
+        name: "to_user",
         type: 6, // USER
         description: "Utente proprietario del personaggio",
         required: true,
       },
       {
-        name: "name",
+        name: "to_name",
         type: 3,
         description: "Nome del personaggio",
         required: true,
+        autocomplete: true
       },
       {
         name: "amount",
@@ -117,13 +118,13 @@ const commands = [
     {
       name: "to_user",
       type: 6, // USER
-      description: "Utente che riceve",
+      description: "Utente che possiede il pg",
       required: true,
     },
     {
       name: "to_name",
       type: 3, // STRING
-      description: "Personaggio che riceve",
+      description: "Personaggio che riceve il denaro",
       required: true,
       autocomplete: true
     },
@@ -282,6 +283,7 @@ client.on("interactionCreate", async (interaction) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
