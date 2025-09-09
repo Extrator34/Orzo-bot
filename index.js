@@ -211,7 +211,7 @@ const commands = [
       required: true,
     },
   ],
-}
+},
 
 {
   name: "removeexp",
@@ -237,7 +237,7 @@ const commands = [
       required: true,
     },
   ],
-},
+}
 
 
 
@@ -526,6 +526,7 @@ if (interaction.commandName === "list") {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
