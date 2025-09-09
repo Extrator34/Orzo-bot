@@ -49,6 +49,7 @@ const characterSchema = new mongoose.Schema({
   level: {type: Number, default: 1},
   expTotale: {type: Number, default: 0},
   expMostrata: {type: Number, default: 0},
+  createdAt: { type: Date, default: Date.now },
   
   
 });
@@ -124,5 +125,6 @@ client.on("interactionCreate", async (interaction) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
