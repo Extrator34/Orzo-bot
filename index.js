@@ -302,34 +302,33 @@ client.on("interactionCreate", async (interaction) => {
     );
   }
 
-  if (interaction.commandName === "rename") {
+ if (interaction.commandName === "rename") {
+  await interaction.deferReply(); // ti dà tempo extra
+
   const fromName = interaction.options.getString("from_name");
   const newName = interaction.options.getString("name");
 
-  // Cerca il pg
+  // trova personaggio
   const char = await Character.findOne({ userId: interaction.user.id, name: fromName });
   if (!char) {
-    await interaction.reply(`❌ Non hai nessun personaggio chiamato **${fromName}**.`);
+    await interaction.editReply(`❌ Non hai nessun personaggio chiamato **${fromName}**.`);
     return;
   }
 
-  // Controllo se esiste già un altro pg con lo stesso nome
-  const existing = await Character.findOne({ userId: interaction.user.id, name: newName });
-  if (existing) {
-    await interaction.reply(`❌ Hai già un personaggio chiamato **${newName}**.`);
-    return;
-  }
-
-  // Aggiorna il nome
+  // aggiorna nome
   char.name = newName;
   await char.save();
 
-  await interaction.reply(`✅ Il personaggio **${fromName}** è stato rinominato in **${newName}**!`);
+  await interaction.editReply(
+    `✏️ Il tuo personaggio **${fromName}** è stato rinominato in **${newName}** ✅`
+  );
 }
+
 
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
