@@ -333,10 +333,11 @@ if (interaction.commandName === "list") {
 
 
   if (interaction.commandName === "addmoney") {
-    if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
-      await interaction.reply("❌ Non hai il permesso per usare questo comando.");
-      return;
-    }
+    await interaction.deferReply();
+    
+  if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
+    return await interaction.editReply("❌ Non hai il permesso per usare questo comando.");
+  }
 
     const user = interaction.options.getUser("to_user");
     const name = interaction.options.getString("to_name");
@@ -351,10 +352,10 @@ if (interaction.commandName === "list") {
     character.money += amount;
     await character.save();
 
-    await interaction.reply(
-      `💰 Aggiunti **${amount}** soldi al personaggio **${character.name}** di ${user.username}. Totale: ${character.money}💰`
-    );
-  }
+    await interaction.editReply(
+    `💰 Aggiunti **${amount}** soldi al personaggio **${character.name}** di ${user.username}. Totale: ${character.money}💰`
+  );
+}
 
   if (interaction.commandName === "pay") {
     const fromName = interaction.options.getString("from_name");
@@ -524,6 +525,7 @@ if (interaction.commandName === "list") {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
