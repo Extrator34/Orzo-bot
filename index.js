@@ -158,12 +158,10 @@ client.on("ready", () => {
 
 client.on("interactionCreate", async (interaction) => {
 
-  client.on("interactionCreate", async (interaction) => {
-  if (interaction.isAutocomplete()) {
+   if (interaction.isAutocomplete()) {
     const focused = interaction.options.getFocused(true);
     let choices = [];
 
-    // 🔹 Lista PG dell'utente che paga
     if (focused.name === "from_name") {
       const chars = await Character.find({ userId: interaction.user.id });
       choices = chars.map(c => ({
@@ -172,24 +170,16 @@ client.on("interactionCreate", async (interaction) => {
       }));
     }
 
-    // 🔹 Lista PG del destinatario
     if (focused.name === "to_name") {
       const toUser = interaction.options.getUser("to_user");
-
       if (!toUser) {
         await interaction.respond([]);
         return;
       }
-
       const chars = await Character.find({ userId: toUser.id });
-      if (chars.length === 0) {
-        choices = [{ name: "❌ Nessun personaggio trovato", value: "none" }];
-      } else {
-        choices = chars.map(c => ({
-          name: `${c.name} (${toUser.username})`,
-          value: c.name
-        }));
-      }
+      choices = chars.length > 0
+        ? chars.map(c => ({ name: `${c.name} (${toUser.username})`, value: c.name }))
+        : [{ name: "❌ Nessun personaggio trovato", value: "none" }];
     }
 
     await interaction.respond(choices.slice(0, 25));
@@ -289,5 +279,6 @@ client.on("interactionCreate", async (interaction) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
