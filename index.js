@@ -166,7 +166,7 @@ client.on("interactionCreate", async (interaction) => {
   if (focused.name === "from_name") {
     const chars = await Character.find({ userId: interaction.user.id });
     choices = chars.map(c => ({
-      name: `${c.name} (Tuo PG)`,
+      name: `${c.name}`,
       value: c.name
     }));
   }
@@ -283,6 +283,7 @@ client.on("interactionCreate", async (interaction) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
