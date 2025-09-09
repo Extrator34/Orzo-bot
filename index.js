@@ -1,23 +1,19 @@
 import http from "http";
-
-const PORT = process.env.PORT || 3000; // Render passa automaticamente una porta in PORT
-
-const server = http.createServer((req, res) => {
-  res.writeHead(200, { "Content-Type": "text/plain" });
-  res.end("Bot Discord attivo ✅");
-});
-
-server.listen(PORT, () => {
-  console.log(`🌐 Server web fittizio in ascolto su porta ${PORT}`);
-});
-
-
 import { Client, GatewayIntentBits, REST, Routes } from "discord.js";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 
-// Carica le variabili d’ambiente (in locale, su Render le prende dalle Environment Variables)
 dotenv.config();
+
+// ====== SERVER FINTIZIO PER RENDER ======
+const PORT = process.env.PORT || 3000;
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { "Content-Type": "text/plain" });
+  res.end("Bot Discord attivo ✅");
+});
+server.listen(PORT, () => {
+  console.log(`🌐 Server web fittizio in ascolto su porta ${PORT}`);
+});
 
 // ====== DEBUG VARIABILI ======
 console.log("🔎 Variabili lette:");
@@ -65,7 +61,7 @@ const commands = [
     options: [
       {
         name: "name",
-        type: 3, // STRING
+        type: 3,
         description: "Nome del personaggio",
         required: true,
       },
@@ -77,19 +73,25 @@ const commands = [
   },
   {
     name: "daily",
-    description: "Ottieni soldi gionalmente",
+    description: "Ottieni soldi giornalieri",
   },
 ];
 
 const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
 
 try {
-  console.log("🔄 Aggiornamento comandi slash...");
+  // 🗑️ Elimina TUTTI i comandi globali
+  console.log("🗑️ Eliminazione comandi globali...");
+  await rest.put(Routes.applicationCommands(process.env.CLIENT_ID), { body: [] });
+  console.log("✅ Tutti i comandi globali eliminati");
+
+  // 🔄 Registra solo i comandi nella guild
+  console.log("🔄 Aggiornamento comandi slash (guild)...");
   await rest.put(
     Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
     { body: commands }
   );
-  console.log("✅ Comandi slash registrati");
+  console.log("✅ Comandi slash registrati nella guild");
 } catch (err) {
   console.error("❌ Errore registrazione comandi:", err);
 }
@@ -103,12 +105,12 @@ client.on("interactionCreate", async (interaction) => {
 
   if (interaction.commandName === "create") {
     const name = interaction.options.getString("name");
-
     const newChar = new Character({ userId: interaction.user.id, name });
     await newChar.save();
-
     await interaction.reply(`✅ Personaggio **${name}** creato!`);
-  } else if (interaction.commandName === "list") {
+  }
+
+  if (interaction.commandName === "list") {
     const chars = await Character.find({ userId: interaction.user.id });
     if (chars.length === 0) {
       await interaction.reply("❌ Non hai ancora personaggi.");
@@ -116,46 +118,35 @@ client.on("interactionCreate", async (interaction) => {
       const list = chars.map((c) => `- ${c.name}: ${c.money}💰`).join("\n");
       await interaction.reply(`📜 I tuoi personaggi:\n${list}`);
     }
-  } else if (interaction.commandName === "daily") {
-  const chars = await Character.find({ userId: interaction.user.id });
-  if (chars.length === 0) {
-    await interaction.reply("❌ Non hai ancora personaggi.");
-    return;
   }
 
-  const now = new Date();
-  const oneDay = 24 * 60 * 60 * 1000;
-
-  const messages = [];
-
-  for (const c of chars) {
-    if (c.lastDaily && now - c.lastDaily < oneDay) {
-      const remaining = oneDay - (now - c.lastDaily);
-      const hours = Math.floor(remaining / (1000 * 60 * 60));
-      const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
-      messages.push(`⏳ Il personaggio **${c.name}** deve aspettare ${hours}h ${minutes}m`);
-    } else {
-      c.money += 100;
-      c.lastDaily = now;
-      await c.save();
-      messages.push(`💵 Soldi riscossi per **${c.name}**: ${c.money}💰`);
+  if (interaction.commandName === "daily") {
+    const chars = await Character.find({ userId: interaction.user.id });
+    if (chars.length === 0) {
+      await interaction.reply("❌ Non hai ancora personaggi.");
+      return;
     }
+
+    const now = new Date();
+    const oneDay = 24 * 60 * 60 * 1000;
+    const messages = [];
+
+    for (const c of chars) {
+      if (c.lastDaily && now - c.lastDaily < oneDay) {
+        const remaining = oneDay - (now - c.lastDaily);
+        const hours = Math.floor(remaining / (1000 * 60 * 60));
+        const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+        messages.push(`⏳ **${c.name}** deve aspettare ${hours}h ${minutes}m`);
+      } else {
+        c.money += 100;
+        c.lastDaily = now;
+        await c.save();
+        messages.push(`💵 Riscossi soldi per **${c.name}**: ${c.money}💰`);
+      }
+    }
+
+    await interaction.reply(messages.join("\n"));
   }
-
-  await interaction.reply(messages.join("\n"));
-}
-
-
 });
 
-
-
 client.login(process.env.DISCORD_TOKEN);
-
-
-
-
-
-
-
-
