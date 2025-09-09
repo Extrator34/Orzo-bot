@@ -115,9 +115,9 @@ client.on("interactionCreate", async (interaction) => {
       await interaction.reply("❌ Non hai ancora personaggi.");
     } else {
       const list = chars.map((c) => `- ${c.name} 
-      Livello: ${c.level}
-      Exp per il prossimo livello: TODO
-      -----------------------------`).join("\n");
+  Livello: ${c.level}
+  Exp per il prossimo livello: TODO
+  -----------------------------`).join("\n");
       await interaction.reply(`📜 I tuoi personaggi:\n${list}`);
     }
   }
@@ -125,6 +125,7 @@ client.on("interactionCreate", async (interaction) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
