@@ -103,29 +103,29 @@ const commands = [
       },
     ],
   },
-  {
+{
   name: "pay",
   description: "Paga un altro personaggio",
   options: [
     {
       name: "from_name",
       type: 3, // STRING
-      description: "Nome del tuo personaggio che paga",
+      description: "Il tuo personaggio che paga",
       required: true,
-      autocomplete: true,
+      autocomplete: true
     },
     {
       name: "to_user",
       type: 6, // USER
-      description: "Utente che riceve il pagamento",
+      description: "Utente che riceve",
       required: true,
     },
     {
       name: "to_name",
       type: 3, // STRING
-      description: "Nome del personaggio che riceve",
+      description: "Personaggio che riceve",
       required: true,
-      autocomplete: true,
+      autocomplete: true
     },
     {
       name: "amount",
@@ -134,7 +134,8 @@ const commands = [
       required: true,
     },
   ],
-}
+},
+
 
 ];
 
@@ -157,32 +158,44 @@ client.on("ready", () => {
 
 client.on("interactionCreate", async (interaction) => {
 
-   if (interaction.isAutocomplete()) {
+  client.on("interactionCreate", async (interaction) => {
+  if (interaction.isAutocomplete()) {
     const focused = interaction.options.getFocused(true);
     let choices = [];
 
+    // 🔹 Lista PG dell'utente che paga
     if (focused.name === "from_name") {
       const chars = await Character.find({ userId: interaction.user.id });
       choices = chars.map(c => ({
-        name: `${c.name} (tuo PG)`, 
+        name: `${c.name} (tuo PG)`,
         value: c.name
       }));
     }
 
+    // 🔹 Lista PG del destinatario
     if (focused.name === "to_name") {
       const toUser = interaction.options.getUser("to_user");
-      if (toUser) {
-        const chars = await Character.find({ userId: toUser.id });
+
+      if (!toUser) {
+        await interaction.respond([]);
+        return;
+      }
+
+      const chars = await Character.find({ userId: toUser.id });
+      if (chars.length === 0) {
+        choices = [{ name: "❌ Nessun personaggio trovato", value: "none" }];
+      } else {
         choices = chars.map(c => ({
-          name: `${c.name} (${toUser.username})`, 
+          name: `${c.name} (${toUser.username})`,
           value: c.name
         }));
       }
     }
 
     await interaction.respond(choices.slice(0, 25));
-    return; // importante: esci qui, sennò va a finire nei comandi
+    return;
   }
+
   
   if (!interaction.isCommand()) return;
 
@@ -276,4 +289,5 @@ client.on("interactionCreate", async (interaction) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
