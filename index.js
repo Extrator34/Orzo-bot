@@ -225,8 +225,8 @@ client.on("interactionCreate", async (interaction) => {
       return;
     }
 
-    const user = interaction.options.getUser("user");
-    const name = interaction.options.getString("name");
+    const user = interaction.options.getUser("to_user");
+    const name = interaction.options.getString("to_name");
     const amount = interaction.options.getInteger("amount");
 
     const character = await Character.findOne({ userId: user.id, name });
@@ -283,6 +283,7 @@ client.on("interactionCreate", async (interaction) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
