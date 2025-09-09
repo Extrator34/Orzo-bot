@@ -59,7 +59,7 @@ const client = new Client({
 });
 
 // ID del ruolo richiesto per usare /addmoney
-const ADMIN_ROLE_ID = "123456789012345678"; // <-- sostituisci con il tuo
+const ADMIN_ROLE_ID = "783454797445464076"; // <-- sostituisci con il tuo
 
 // ====== COMANDI SLASH ======
 const commands = [
@@ -143,6 +143,7 @@ client.on("interactionCreate", async (interaction) => {
   Livello: ${c.level}
   Soldi: ${c.money}💰
   Exp per il prossimo livello: TODO
+  
   -----------------------------`
         )
         .join("\n");
@@ -177,3 +178,4 @@ client.on("interactionCreate", async (interaction) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
