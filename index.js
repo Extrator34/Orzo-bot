@@ -445,7 +445,7 @@ if (interaction.commandName === "list") {
   } else {
     await interaction.reply(
       `✅ Aggiunti **${amount} exp** a **${char.name}**.\n` +
-      `Livello attuale: ${char.level} | Exp mostrata: ${char.expMostrata}`
+      `Livello attuale: ${char.level} | Exp: ${char.expMostrata}`
     );
   }
 }
@@ -454,6 +454,7 @@ if (interaction.commandName === "list") {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
