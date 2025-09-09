@@ -213,6 +213,31 @@ const commands = [
   ],
 }
 
+{
+  name: "removeexp",
+  description: "(ADMIN ONLY) Rimuovi exp a un personaggio",
+  options: [
+    {
+      name: "to_user",
+      type: 6, // USER
+      description: "Utente proprietario del personaggio",
+      required: true,
+    },
+    {
+      name: "to_name",
+      type: 3, // STRING
+      description: "Nome del personaggio",
+      required: true,
+      autocomplete: true
+    },
+    {
+      name: "amount",
+      type: 4, // INTEGER
+      description: "Quantità di exp da rimuovere",
+      required: true,
+    },
+  ],
+},
 
 
 
@@ -454,9 +479,54 @@ if (interaction.commandName === "list") {
 }
 
 
+  if (interaction.commandName === "removeexp") {
+  if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
+    await interaction.reply("❌ Non hai il permesso per usare questo comando.");
+    return;
+  }
+
+  const user = interaction.options.getUser("to_user");
+  const name = interaction.options.getString("to_name");
+  const amount = interaction.options.getInteger("amount");
+
+  if (amount <= 0) {
+    await interaction.reply("❌ Devi inserire un numero positivo di exp da rimuovere.");
+    return;
+  }
+
+  const character = await Character.findOne({ userId: user.id, name });
+  if (!character) {
+    await interaction.reply(`❌ Personaggio **${name}** non trovato per ${user.username}.`);
+    return;
+  }
+
+  // Rimuovi exp senza scendere sotto 0
+  character.expTotale = Math.max(0, character.expTotale - amount);
+
+  // Ricalcola livello e expMostrata
+  const entry = [...expTable].reverse().find(([expReq]) => character.expTotale >= expReq);
+  const livello = entry ? entry[1] : 1;
+  const expBase = entry ? entry[0] : 0;
+  const nextExp = expTable.find(([_, lvl]) => lvl === livello + 1)?.[0] ?? "—";
+  const expMostrata = character.expTotale - expBase;
+
+  character.level = livello;
+  character.expMostrata = expMostrata;
+  await character.save();
+
+  await interaction.reply(
+    `📉 Rimossi **${amount} exp** da **${character.name}** di ${user.username}.\n` +
+    `Livello attuale: ${livello}\n` +
+    `Exp: ${expMostrata} / ${nextExp - expBase}`
+  );
+}
+
+  
+
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
