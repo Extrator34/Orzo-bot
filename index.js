@@ -158,33 +158,36 @@ client.on("ready", () => {
 
 client.on("interactionCreate", async (interaction) => {
 
-   if (interaction.isAutocomplete()) {
-    const focused = interaction.options.getFocused(true);
-    let choices = [];
+  if (interaction.isAutocomplete()) {
+  const focused = interaction.options.getFocused(true);
+  let choices = [];
 
-    if (focused.name === "from_name") {
-      const chars = await Character.find({ userId: interaction.user.id });
-      choices = chars.map(c => ({
-        name: `${c.name} (tuo PG)`,
-        value: c.name
-      }));
-    }
-
-    if (focused.name === "to_name") {
-      const toUser = interaction.options.getUser("to_user");
-      if (!toUser) {
-        await interaction.respond([]);
-        return;
-      }
-      const chars = await Character.find({ userId: toUser.id });
-      choices = chars.length > 0
-        ? chars.map(c => ({ name: `${c.name} (${toUser.username})`, value: c.name }))
-        : [{ name: "❌ Nessun personaggio trovato", value: "none" }];
-    }
-
-    await interaction.respond(choices.slice(0, 25));
-    return;
+  if (focused.name === "from_name") {
+    const chars = await Character.find({ userId: interaction.user.id });
+    choices = chars.map(c => ({
+      name: `${c.name} (Tuo PG)`,
+      value: c.name
+    }));
   }
+
+  if (focused.name === "to_name") {
+    const toOption = interaction.options.get("to_user");
+    const toUserId = toOption?.value;
+
+    if (!toUserId) {
+      // Se non hai scelto ancora l'utente
+      choices = [{ name: "Seleziona prima l'utente", value: "none" }];
+    } else {
+      const chars = await Character.find({ userId: toUserId });
+      choices = chars.length
+        ? chars.map(c => ({ name: `${c.name}`, value: c.name }))
+        : [{ name: "Nessun personaggio trovato", value: "none" }];
+    }
+  }
+
+  await interaction.respond(choices.slice(0, 25));
+  return;
+}
 
   
   if (!interaction.isCommand()) return;
@@ -279,6 +282,7 @@ client.on("interactionCreate", async (interaction) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
