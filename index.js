@@ -59,7 +59,7 @@ const client = new Client({
 });
 
 // ID del ruolo richiesto per usare /addmoney
-const ADMIN_ROLE_ID = "783454797445464076"; // <-- sostituisci con il tuo
+const ADMIN_ROLE_ID = "783454797445464076";
 
 // ====== COMANDI SLASH ======
 const commands = [
@@ -91,14 +91,44 @@ const commands = [
       },
       {
         name: "name",
-        type: 3, // STRING
+        type: 3,
         description: "Nome del personaggio",
         required: true,
       },
       {
         name: "amount",
-        type: 4, // INTEGER
+        type: 4,
         description: "Quantità di soldi da aggiungere",
+        required: true,
+      },
+    ],
+  },
+  {
+    name: "pay",
+    description: "Paga un altro personaggio",
+    options: [
+      {
+        name: "from_name",
+        type: 3, // STRING
+        description: "Nome del tuo personaggio che paga",
+        required: true,
+      },
+      {
+        name: "to_user",
+        type: 6, // USER
+        description: "Utente che riceve il pagamento",
+        required: true,
+      },
+      {
+        name: "to_name",
+        type: 3, // STRING
+        description: "Nome del personaggio che riceve",
+        required: true,
+      },
+      {
+        name: "amount",
+        type: 4, // INTEGER
+        description: "Quantità di soldi da trasferire",
         required: true,
       },
     ],
@@ -152,7 +182,6 @@ client.on("interactionCreate", async (interaction) => {
   }
 
   if (interaction.commandName === "addmoney") {
-    // Controllo ruolo
     if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
       await interaction.reply("❌ Non hai il permesso per usare questo comando.");
       return;
@@ -175,7 +204,44 @@ client.on("interactionCreate", async (interaction) => {
       `💰 Aggiunti **${amount}** soldi al personaggio **${character.name}** di ${user.username}. Totale: ${character.money}💰`
     );
   }
+
+  if (interaction.commandName === "pay") {
+    const fromName = interaction.options.getString("from_name");
+    const toUser = interaction.options.getUser("to_user");
+    const toName = interaction.options.getString("to_name");
+    const amount = interaction.options.getInteger("amount");
+
+    // trova personaggio mittente
+    const fromChar = await Character.findOne({ userId: interaction.user.id, name: fromName });
+    if (!fromChar) {
+      await interaction.reply(`❌ Non hai nessun personaggio chiamato **${fromName}**.`);
+      return;
+    }
+
+    if (fromChar.money < amount) {
+      await interaction.reply(`❌ Il personaggio **${fromChar.name}** non ha abbastanza soldi (ha ${fromChar.money}💰).`);
+      return;
+    }
+
+    // trova personaggio destinatario
+    const toChar = await Character.findOne({ userId: toUser.id, name: toName });
+    if (!toChar) {
+      await interaction.reply(`❌ Il personaggio **${toName}** non è stato trovato per ${toUser.username}.`);
+      return;
+    }
+
+    // trasferisci soldi
+    fromChar.money -= amount;
+    toChar.money += amount;
+
+    await fromChar.save();
+    await toChar.save();
+
+    await interaction.reply(
+      `✅ **${fromChar.name}** ha pagato **${amount}💰** a **${toChar.name}** (${toUser.username}).\n` +
+      `Saldo aggiornato: ${fromChar.name} → ${fromChar.money}💰 | ${toChar.name} → ${toChar.money}💰`
+    );
+  }
 });
 
 client.login(process.env.DISCORD_TOKEN);
-
