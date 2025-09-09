@@ -102,6 +102,23 @@ const commands = [
         description: "Quantità di soldi da aggiungere",
         required: true,
       },
+      {
+        name: "rename",
+        description: "Rinomina un tuo personaggio",
+        options: [
+      {
+        name: "from_name",
+        type: 3, // STRING
+        description: "Il tuo personaggio da rinominare",
+        required: true,
+        autocomplete: true
+      },
+      {
+        name: "name",
+        type: 3,
+        description: "Nuovo nome del personaggio",
+        required: true,
+      },
     ],
   },
 {
@@ -283,6 +300,7 @@ client.on("interactionCreate", async (interaction) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
