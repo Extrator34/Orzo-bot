@@ -278,24 +278,33 @@ client.on("interactionCreate", async (interaction) => {
     await interaction.reply(`✅ Personaggio **${name}** creato!`);
   }
 
-  if (interaction.commandName === "list") {
-    const chars = await Character.find({ userId: interaction.user.id });
-    if (chars.length === 0) {
-      await interaction.reply("❌ Non hai ancora personaggi.");
-    } else {
-      const list = chars
-        .map(
-          (c) => `- ${c.name} 
-  Livello: ${c.level}
+if (interaction.commandName === "list") {
+  const chars = await Character.find({ userId: interaction.user.id });
+  if (chars.length === 0) {
+    await interaction.reply("❌ Non hai ancora personaggi.");
+  } else {
+    const list = chars
+      .map((c) => {
+        // trova livello massimo valido
+        const entry = [...expTable].reverse().find(([expReq]) => c.expTotale >= expReq);
+        const livello = entry ? entry[1] : 1;
+        const expBase = entry ? entry[0] : 0;
+
+        // exp mostrata = exp totale - base del livello
+        const expMostrata = c.expTotale - expBase;
+
+        return `- ${c.name} 
+  Livello: ${livello}
   Soldi: ${c.money}💰
-  Exp per il prossimo livello: TODO
+  Exp: ${expMostrata} / prossimo livello
   
-  -----------------------------`
-        )
-        .join("\n");
-      await interaction.reply(`📜 I tuoi personaggi:\n${list}`);
-    }
+  -----------------------------`;
+      })
+      .join("\n");
+    await interaction.reply(`📜 I tuoi personaggi:\n${list}`);
   }
+}
+
 
   if (interaction.commandName === "addmoney") {
     if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
@@ -445,6 +454,7 @@ client.on("interactionCreate", async (interaction) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
