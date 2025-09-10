@@ -239,6 +239,59 @@ const commands = [
 }
 
 
+  {
+  name: "sethpmax",
+  description: "(ADMIN ONLY) Modifica gli HP massimi di un personaggio",
+  options: [
+    {
+      name: "to_user",
+      type: 6, // USER
+      description: "Utente proprietario del personaggio",
+      required: true,
+    },
+    {
+      name: "to_name",
+      type: 3, // STRING
+      description: "Nome del personaggio",
+      required: true,
+      autocomplete: true
+    },
+    {
+      name: "amount",
+      type: 4, // INTEGER
+      description: "Nuovo valore di HP massimi",
+      required: true,
+    },
+  ],
+},
+{
+  name: "sethpperlevel",
+  description: "(ADMIN ONLY) Modifica gli HP guadagnati per livello",
+  options: [
+    {
+      name: "to_user",
+      type: 6, // USER
+      description: "Utente proprietario del personaggio",
+      required: true,
+    },
+    {
+      name: "to_name",
+      type: 3, // STRING
+      description: "Nome del personaggio",
+      required: true,
+      autocomplete: true
+    },
+    {
+      name: "amount",
+      type: 4, // INTEGER
+      description: "Nuovo valore di HP per livello",
+      required: true,
+    },
+  ],
+},
+
+
+
 
 ];
 
@@ -551,6 +604,7 @@ if (interaction.commandName === "list") {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
