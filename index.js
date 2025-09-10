@@ -472,9 +472,9 @@ if (interaction.commandName === "list") {
     );
        
     const diff = newLevel - oldLevel;
-    character.hpMax = Math.max(1, character.hpMax + diff * character.hpPerLevel);
+    char.hpMax = Math.max(1, char.hpMax + diff * char.hpPerLevel);
 
-    await character.save();
+    await char.save();
     
   } else {
     await interaction.reply(
@@ -548,6 +548,7 @@ if (interaction.commandName === "list") {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
