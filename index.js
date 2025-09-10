@@ -730,7 +730,6 @@ if (interaction.isChatInputCommand() && interaction.commandName === "deletepg") 
   }
 }
 
-  if (interaction.isButton()) {
 if (interaction.isButton()) {
   try {
     if (interaction.customId.startsWith("confirm_delete_")) {
@@ -770,6 +769,7 @@ if (interaction.isButton()) {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
