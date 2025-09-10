@@ -302,34 +302,7 @@ const commands = [
       autocomplete: true
     }
   ]
-},
-
-  {
-  name: "addkarma",
-  description: "Modifica il karma di un personaggio (solo admin).",
-  options: [
-    {
-      name: "to_user",
-      description: "Seleziona l'utente proprietario del personaggio.",
-      type: 6, // USER
-      required: true,
-    },
-    {
-      name: "to_name",
-      description: "Nome del personaggio a cui modificare il karma.",
-      type: 3, // STRING
-      required: true,
-      autocomplete: true // così usi già il tuo sistema esistente di autocomplete
-    },
-    {
-      name: "amount",
-      description: "Quantità di karma da aggiungere (può essere positiva o negativa).",
-      type: 4, // INTEGER
-      required: true,
-    },
-  ],
 }
-
 
 
 
@@ -746,6 +719,7 @@ if (interaction.isChatInputCommand() && interaction.commandName === "deletepg") 
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
