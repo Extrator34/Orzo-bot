@@ -740,32 +740,13 @@ if (interaction.isChatInputCommand() && interaction.commandName === "deletepg") 
 }
 
 
-  if (interaction.isChatInputCommand() && interaction.commandName === "addkarma") {
-  try {
-    await interaction.deferReply({ ephemeral: true });
-
-    if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
-      await interaction.editReply("❌ Non hai il permesso per usare questo comando.");
-      return;
-    }
-
-    const user = interaction.options.getUser("to_user");
-    const name = interaction.options.getString("to_name");
-    const amount = interaction.options.getInteger("amount"); // può essere positivo o negativo
-
-    const char = await Character.findOne({ userId: user.id, name });
-    if (!char) {
-      await interaction.editReply(`❌ Personaggio **${name}** non trovato per ${user.username}.`);
-      return;
-    }
-
-  
-
+ 
   
   
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
