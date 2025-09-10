@@ -236,7 +236,7 @@ const commands = [
       required: true,
     },
   ],
-}
+},
 
 
   {
@@ -288,7 +288,7 @@ const commands = [
       required: true,
     },
   ],
-},
+}
 
 
 
@@ -604,6 +604,7 @@ if (interaction.commandName === "list") {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
