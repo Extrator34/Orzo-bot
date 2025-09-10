@@ -740,7 +740,7 @@ if (interaction.isChatInputCommand() && interaction.commandName === "deletepg") 
 
   if (interaction.isChatInputCommand() && interaction.commandName === "addkarma") {
   try {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply(); // senza ephemeral
 
     if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
       await interaction.editReply("❌ Non hai il permesso per usare questo comando.");
@@ -785,6 +785,7 @@ if (interaction.isChatInputCommand() && interaction.commandName === "deletepg") 
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
