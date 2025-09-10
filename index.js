@@ -511,8 +511,15 @@ if (interaction.commandName === "list") {
   const nextExp = expTable.find(([_, lvl]) => lvl === livello + 1)?.[0] ?? "—";
   const expMostrata = character.expTotale - expBase;
 
+  const oldLevel = character.level;
   character.level = livello;
   character.expMostrata = expMostrata;
+
+  if (livello < oldLevel) {
+    const diff = oldLevel - livello;
+    character.hpMax = Math.max(1, character.hpMax - diff * character.hpPerLevel);
+  }
+    
   await character.save();
 
   await interaction.reply(
@@ -536,6 +543,7 @@ if (interaction.commandName === "list") {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
