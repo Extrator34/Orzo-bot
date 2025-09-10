@@ -774,7 +774,7 @@ if (interaction.isChatInputCommand() && interaction.commandName === "deletepg") 
     if (interaction.deferred || interaction.replied) {
       await interaction.editReply("⚠️ Errore interno, riprova più tardi.");
     } else {
-      await interaction.reply({ content: "⚠️ Errore interno, riprova più tardi.", ephemeral: true });
+      await interaction.reply({ content: "⚠️ Errore interno, riprova più tardi."});
     }
   }
 }
@@ -785,6 +785,7 @@ if (interaction.isChatInputCommand() && interaction.commandName === "deletepg") 
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
