@@ -686,32 +686,30 @@ if (interaction.commandName === "sethpperlevel") {
   }
 }
 
-if (interaction.commandName === "deletepg") {
+if (interaction.isChatInputCommand() && interaction.commandName === "deletepg") {
   try {
     await interaction.deferReply({ ephemeral: true });
 
     const fromName = interaction.options.getString("from_name");
 
-    // trova personaggio
     const char = await Character.findOne({ userId: interaction.user.id, name: fromName });
     if (!char) {
       await interaction.editReply(`❌ Non hai nessun personaggio chiamato **${fromName}**.`);
       return;
     }
 
-    // crea bottoni
     const row = {
       type: 1,
       components: [
         {
           type: 2,
-          style: 4, // ROSSO
+          style: 4, // Rosso
           label: "Conferma eliminazione",
           custom_id: `confirm_delete_${char._id}`,
         },
         {
           type: 2,
-          style: 2, // GRIGIO
+          style: 2, // Grigio
           label: "Annulla",
           custom_id: `cancel_delete_${char._id}`,
         },
@@ -723,39 +721,54 @@ if (interaction.commandName === "deletepg") {
       components: [row],
     });
   } catch (err) {
-    console.error("❌ Errore deletepg:", err);
-    await interaction.editReply("⚠️ Errore interno, riprova più tardi.");
+    console.error("❌ Errore deletepg (slash command):", err);
+    if (interaction.deferred || interaction.replied) {
+      await interaction.editReply("⚠️ Errore interno, riprova più tardi.");
+    } else {
+      await interaction.reply({ content: "⚠️ Errore interno, riprova più tardi.", ephemeral: true });
+    }
   }
 }
 
-// gestione pulsanti
-if (interaction.isButton()) {
-  if (interaction.customId.startsWith("confirm_delete_")) {
-    const charId = interaction.customId.replace("confirm_delete_", "");
-    const char = await Character.findOne({ _id: charId, userId: interaction.user.id });
+  if (interaction.isButton()) {
+  try {
+    if (interaction.customId.startsWith("confirm_delete_")) {
+      await interaction.deferUpdate();
 
-    if (!char) {
-      await interaction.reply({ content: "❌ Personaggio non trovato o non ti appartiene.", ephemeral: true });
-      return;
+      const charId = interaction.customId.replace("confirm_delete_", "");
+      const char = await Character.findOne({ _id: charId, userId: interaction.user.id });
+
+      if (!char) {
+        await interaction.editReply({ content: "❌ Personaggio non trovato o non ti appartiene.", components: [] });
+        return;
+      }
+
+      await Character.deleteOne({ _id: char._id });
+
+      await interaction.editReply({
+        content: `🗑️ Il personaggio **${char.name}** è stato eliminato con successo.`,
+        components: [],
+      });
     }
 
-    await Character.deleteOne({ _id: char._id });
-
-    await interaction.reply({
-      content: `🗑️ Il personaggio **${char.name}** è stato eliminato con successo.`,
-      ephemeral: true,
-    });
-  }
-
-  if (interaction.customId.startsWith("cancel_delete_")) {
-    await interaction.reply({ content: "❎ Eliminazione annullata.", ephemeral: true });
+    if (interaction.customId.startsWith("cancel_delete_")) {
+      await interaction.deferUpdate();
+      await interaction.editReply({ content: "❎ Eliminazione annullata.", components: [] });
+    }
+  } catch (err) {
+    console.error("❌ Errore deletepg (button):", err);
+    try {
+      await interaction.editReply({ content: "⚠️ Errore durante la gestione del pulsante.", components: [] });
+    } catch {}
   }
 }
+
 
   
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
