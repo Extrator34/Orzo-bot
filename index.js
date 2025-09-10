@@ -296,7 +296,7 @@ const commands = [
   options: [
     {
       type: 3, // STRING
-      name: "name",
+      name: "from_name",
       description: "Nome del personaggio da eliminare",
       required: true,
       autocomplete: true
@@ -771,6 +771,7 @@ client.on("interactionCreate", async (buttonInteraction) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
