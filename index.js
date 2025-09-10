@@ -470,7 +470,12 @@ if (interaction.commandName === "list") {
       `🎉 Congratulazioni! **${char.name}** è salito al livello **${newLevel}**!\n` +
       `Exp attuale: ${char.expMostrata} / prossimo livello`
     );
-     char.hpMax = char.hpMax + char.hpPerLevel;
+       
+    const diff = livello - oldLevel;
+    character.hpMax = Math.max(1, character.hpMax + diff * character.hpPerLevel);
+
+    await character.save();
+    
   } else {
     await interaction.reply(
       `✅ Aggiunti **${amount} exp** a **${char.name}**.\n` +
@@ -543,6 +548,7 @@ if (interaction.commandName === "list") {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
