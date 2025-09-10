@@ -471,7 +471,7 @@ if (interaction.commandName === "list") {
       `Exp attuale: ${char.expMostrata} / prossimo livello`
     );
        
-    const diff = livello - oldLevel;
+    const diff = newLevel - oldLevel;
     character.hpMax = Math.max(1, character.hpMax + diff * character.hpPerLevel);
 
     await character.save();
@@ -548,6 +548,7 @@ if (interaction.commandName === "list") {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
