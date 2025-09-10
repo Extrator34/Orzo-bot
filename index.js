@@ -6,7 +6,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 // ====== SERVER FINTIZIO PER RENDER ======
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 const server = http.createServer((req, res) => {
   res.writeHead(200, { "Content-Type": "text/plain" });
   res.end("Bot Discord attivo ✅");
@@ -785,6 +785,7 @@ if (interaction.isChatInputCommand() && interaction.commandName === "deletepg") 
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
