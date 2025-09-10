@@ -688,7 +688,7 @@ if (interaction.commandName === "sethpperlevel") {
 
 if (interaction.isChatInputCommand() && interaction.commandName === "deletepg") {
   try {
-    if (!interaction.deferred) await interaction.deferReply({ ephemeral: true });
+    if (!interaction.deferred) await interaction.deferReply({ flags: 64 });
 
     const fromName = interaction.options.getString("from_name");
     const char = await Character.findOne({ userId: interaction.user.id, name: fromName });
@@ -748,6 +748,7 @@ if (interaction.isButton()) {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
