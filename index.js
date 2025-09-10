@@ -759,33 +759,14 @@ if (interaction.isChatInputCommand() && interaction.commandName === "deletepg") 
       return;
     }
 
-    // aggiungi karma e applica i limiti
-    char.karma += amount;
-    if (char.karma < -30) char.karma = -30;
-    if (char.karma > 30) char.karma = 30;
-
-    await char.save();
-
-    await interaction.editReply(
-      `☯️ Karma di **${char.name}** modificato di **${amount}**.\n` +
-      `Valore attuale: **${char.karma}** (range valido: -30 → +30).`
-    );
-
-  } catch (err) {
-    console.error("❌ Errore addkarma:", err);
-    if (interaction.deferred || interaction.replied) {
-      await interaction.editReply("⚠️ Errore interno, riprova più tardi.");
-    } else {
-      await interaction.reply({ content: "⚠️ Errore interno, riprova più tardi.", ephemeral: true });
-    }
-  }
-}
+  
 
   
   
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
