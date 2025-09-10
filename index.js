@@ -688,58 +688,27 @@ if (interaction.commandName === "sethpperlevel") {
 
 if (interaction.isChatInputCommand() && interaction.commandName === "deletepg") {
   try {
-    if (!interaction.deferred) await interaction.deferReply({ flags: 64 });
+    await interaction.deferReply({ flags: 64 });
 
     const fromName = interaction.options.getString("from_name");
-    const char = await Character.findOne({ userId: interaction.user.id, name: fromName });
 
+    const char = await Character.findOne({ userId: interaction.user.id, name: fromName });
     if (!char) {
-      return await interaction.editReply(`❌ Non hai nessun personaggio chiamato **${fromName}**.`);
+      await interaction.editReply(`❌ Non hai nessun personaggio chiamato **${fromName}**.`);
+      return;
     }
 
-    const row = {
-      type: 1,
-      components: [
-        { type: 2, style: 4, label: "Conferma eliminazione", custom_id: `confirm_delete_${char._id}` },
-        { type: 2, style: 2, label: "Annulla", custom_id: `cancel_delete_${char._id}` },
-      ],
-    };
+    await Character.deleteOne({ _id: char._id });
 
-    await interaction.editReply({
-      content: `⚠️ Sei sicuro di voler eliminare **${char.name}**?`,
-      components: [row],
-    });
+    await interaction.editReply(`🗑️ Il personaggio **${char.name}** è stato eliminato con successo.`);
+
   } catch (err) {
     console.error("❌ Errore deletepg:", err);
     if (interaction.deferred || interaction.replied) {
       await interaction.editReply("⚠️ Errore interno, riprova più tardi.");
     } else {
-      await interaction.reply({ content: "⚠️ Errore interno, riprova più tardi.", ephemeral: true });
+      await interaction.reply({ content: "⚠️ Errore interno, riprova più tardi.", flags: 64 });
     }
-  }
-}
-
-
-if (interaction.isButton()) {
-  try {
-    await interaction.deferUpdate(); // velocemente conferma il click
-
-    const charId = interaction.customId.replace(/^(confirm|cancel)_delete_/, "");
-    const char = await Character.findOne({ _id: charId, userId: interaction.user.id });
-
-    if (!char) {
-      return await interaction.update({ content: "❌ Personaggio non trovato o non ti appartiene.", components: [] });
-    }
-
-    if (interaction.customId.startsWith("confirm_delete_")) {
-      await Character.deleteOne({ _id: char._id });
-      await interaction.update({ content: `🗑️ Il personaggio **${char.name}** è stato eliminato.`, components: [] });
-    } else {
-      await interaction.update({ content: "❎ Eliminazione annullata.", components: [] });
-    }
-  } catch (err) {
-    console.error("❌ Errore deletepg (button):", err);
-    try { await interaction.update({ content: "⚠️ Errore pulsante.", components: [] }); } catch {}
   }
 }
 
@@ -748,6 +717,7 @@ if (interaction.isButton()) {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
