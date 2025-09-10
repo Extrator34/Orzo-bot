@@ -302,7 +302,34 @@ const commands = [
       autocomplete: true
     }
   ]
+},
+
+  {
+  name: "addkarma",
+  description: "Modifica il karma di un personaggio (solo admin).",
+  options: [
+    {
+      name: "to_user",
+      description: "Seleziona l'utente proprietario del personaggio.",
+      type: 6, // USER
+      required: true,
+    },
+    {
+      name: "to_name",
+      description: "Nome del personaggio a cui modificare il karma.",
+      type: 3, // STRING
+      required: true,
+      autocomplete: true // così usi già il tuo sistema esistente di autocomplete
+    },
+    {
+      name: "amount",
+      description: "Quantità di karma da aggiungere (può essere positiva o negativa).",
+      type: 4, // INTEGER
+      required: true,
+    },
+  ],
 }
+
 
 
 
@@ -713,10 +740,53 @@ if (interaction.isChatInputCommand() && interaction.commandName === "deletepg") 
 }
 
 
+  if (interaction.isChatInputCommand() && interaction.commandName === "addkarma") {
+  try {
+    await interaction.deferReply({ ephemeral: true });
+
+    if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
+      await interaction.editReply("❌ Non hai il permesso per usare questo comando.");
+      return;
+    }
+
+    const user = interaction.options.getUser("to_user");
+    const name = interaction.options.getString("to_name");
+    const amount = interaction.options.getInteger("amount"); // può essere positivo o negativo
+
+    const char = await Character.findOne({ userId: user.id, name });
+    if (!char) {
+      await interaction.editReply(`❌ Personaggio **${name}** non trovato per ${user.username}.`);
+      return;
+    }
+
+    // aggiungi karma e applica i limiti
+    char.karma += amount;
+    if (char.karma < -30) char.karma = -30;
+    if (char.karma > 30) char.karma = 30;
+
+    await char.save();
+
+    await interaction.editReply(
+      `☯️ Karma di **${char.name}** modificato di **${amount}**.\n` +
+      `Valore attuale: **${char.karma}** (range valido: -30 → +30).`
+    );
+
+  } catch (err) {
+    console.error("❌ Errore addkarma:", err);
+    if (interaction.deferred || interaction.replied) {
+      await interaction.editReply("⚠️ Errore interno, riprova più tardi.");
+    } else {
+      await interaction.reply({ content: "⚠️ Errore interno, riprova più tardi.", ephemeral: true });
+    }
+  }
+}
+
+  
   
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
