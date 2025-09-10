@@ -44,6 +44,7 @@ const characterSchema = new mongoose.Schema({
   money: { type: Number, default: 500 },
   karma: { type: Number, default: 0 },
   hpMax: { type: Number, default: 500 },
+  hpPerLevel: { type: Number, default: 10},
   level: { type: Number, default: 1 },
   expTotale: { type: Number, default: 0 },
   expMostrata: { type: Number, default: 0 },
@@ -469,6 +470,7 @@ if (interaction.commandName === "list") {
       `🎉 Congratulazioni! **${char.name}** è salito al livello **${newLevel}**!\n` +
       `Exp attuale: ${char.expMostrata} / prossimo livello`
     );
+     char.hpMax = char.hpMax + char.hpPerLevel;
   } else {
     await interaction.reply(
       `✅ Aggiunti **${amount} exp** a **${char.name}**.\n` +
@@ -534,6 +536,7 @@ if (interaction.commandName === "list") {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
