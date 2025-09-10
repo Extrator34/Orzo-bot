@@ -688,7 +688,7 @@ if (interaction.commandName === "sethpperlevel") {
 
 if (interaction.isChatInputCommand() && interaction.commandName === "deletepg") {
   try {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: 64 });
 
     const fromName = interaction.options.getString("from_name");
 
@@ -731,6 +731,7 @@ if (interaction.isChatInputCommand() && interaction.commandName === "deletepg") 
 }
 
   if (interaction.isButton()) {
+if (interaction.isButton()) {
   try {
     if (interaction.customId.startsWith("confirm_delete_")) {
       await interaction.deferUpdate();
@@ -739,13 +740,13 @@ if (interaction.isChatInputCommand() && interaction.commandName === "deletepg") 
       const char = await Character.findOne({ _id: charId, userId: interaction.user.id });
 
       if (!char) {
-        await interaction.editReply({ content: "❌ Personaggio non trovato o non ti appartiene.", components: [] });
+        await interaction.update({ content: "❌ Personaggio non trovato o non ti appartiene.", components: [] });
         return;
       }
 
       await Character.deleteOne({ _id: char._id });
 
-      await interaction.editReply({
+      await interaction.update({
         content: `🗑️ Il personaggio **${char.name}** è stato eliminato con successo.`,
         components: [],
       });
@@ -753,21 +754,23 @@ if (interaction.isChatInputCommand() && interaction.commandName === "deletepg") 
 
     if (interaction.customId.startsWith("cancel_delete_")) {
       await interaction.deferUpdate();
-      await interaction.editReply({ content: "❎ Eliminazione annullata.", components: [] });
+      await interaction.update({ content: "❎ Eliminazione annullata.", components: [] });
     }
   } catch (err) {
     console.error("❌ Errore deletepg (button):", err);
     try {
-      await interaction.editReply({ content: "⚠️ Errore durante la gestione del pulsante.", components: [] });
+      await interaction.update({ content: "⚠️ Errore durante la gestione del pulsante.", components: [] });
     } catch {}
   }
 }
+
 
 
   
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
