@@ -601,68 +601,81 @@ if (interaction.commandName === "list") {
     }
   }
 
-  if (interaction.commandName === "sethpmax") {
-  if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
-    await interaction.reply("❌ Non hai il permesso per usare questo comando.");
-    return;
+  // comando sethpmax
+if (interaction.commandName === "sethpmax") {
+  try {
+    if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
+      await interaction.reply("❌ Non hai il permesso per usare questo comando.");
+      return;
+    }
+
+    await interaction.deferReply();
+
+    const user = interaction.options.getUser("to_user");
+    const name = interaction.options.getString("to_name");
+    const amount = interaction.options.getInteger("amount");
+
+    const char = await Character.findOne({ userId: user.id, name });
+    if (!char) {
+      await interaction.editReply(`❌ Personaggio **${name}** non trovato per ${user.username}.`);
+      return;
+    }
+
+    char.hpMax = amount;
+    await char.save();
+
+    await interaction.editReply(
+      `✅ HP massimi di **${char.name}** aggiornati a **${amount}**.`
+    );
+
+  } catch (err) {
+    console.error("❌ Errore in sethpmax:", err);
+    if (interaction.isRepliable()) {
+      await interaction.editReply("❌ Errore durante l’esecuzione del comando sethpmax.");
+    }
   }
-
-  const user = interaction.options.getUser("to_user");
-  const name = interaction.options.getString("to_name");
-  const amount = interaction.options.getInteger("amount");
-
-  if (amount <= 0) {
-    await interaction.reply("❌ Gli HP massimi devono essere maggiori di 0.");
-    return;
-  }
-
-  const char = await Character.findOne({ userId: user.id, name });
-  if (!char) {
-    await interaction.reply(`❌ Personaggio **${name}** non trovato per ${user.username}.`);
-    return;
-  }
-
-  char.hpMax = amount;
-  await char.save();
-
-  await interaction.reply(
-    `❤️ HP massimi di **${char.name}** (${user.username}) impostati a **${amount}**`
-  );
 }
 
+// comando sethpperlevel
 if (interaction.commandName === "sethpperlevel") {
-  if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
-    await interaction.reply("❌ Non hai il permesso per usare questo comando.");
-    return;
+  try {
+    if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
+      await interaction.reply("❌ Non hai il permesso per usare questo comando.");
+      return;
+    }
+
+    await interaction.deferReply();
+
+    const user = interaction.options.getUser("to_user");
+    const name = interaction.options.getString("to_name");
+    const amount = interaction.options.getInteger("amount");
+
+    const char = await Character.findOne({ userId: user.id, name });
+    if (!char) {
+      await interaction.editReply(`❌ Personaggio **${name}** non trovato per ${user.username}.`);
+      return;
+    }
+
+    char.hpPerLevel = amount;
+    await char.save();
+
+    await interaction.editReply(
+      `✅ HP per livello di **${char.name}** aggiornati a **${amount}**.`
+    );
+
+  } catch (err) {
+    console.error("❌ Errore in sethpperlevel:", err);
+    if (interaction.isRepliable()) {
+      await interaction.editReply("❌ Errore durante l’esecuzione del comando sethpperlevel.");
+    }
   }
-
-  const user = interaction.options.getUser("to_user");
-  const name = interaction.options.getString("to_name");
-  const amount = interaction.options.getInteger("amount");
-
-  if (amount < 0) {
-    await interaction.reply("❌ Gli HP per livello non possono essere negativi.");
-    return;
-  }
-
-  const char = await Character.findOne({ userId: user.id, name });
-  if (!char) {
-    await interaction.reply(`❌ Personaggio **${name}** non trovato per ${user.username}.`);
-    return;
-  }
-
-  char.hpPerLevel = amount;
-  await char.save();
-
-  await interaction.reply(
-    `❤️ HP per livello di **${char.name}** (${user.username}) impostati a **${amount}**`
-  );
 }
 
 
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
