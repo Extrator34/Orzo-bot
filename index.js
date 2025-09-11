@@ -352,7 +352,7 @@ const commands = [
 },
 
   {
-  name: "inventory",
+  name: "modifyinventory",
   description: "Gestisci l'inventario di un personaggio",
   options: [
     {
@@ -383,7 +383,6 @@ const commands = [
       type: 3, // STRING
       description: "Nome dell'oggetto",
       required: true,
-      autocomplete: true, // 🔥
     },
   ],
 }
@@ -1045,6 +1044,7 @@ if (interaction.isCommand() && interaction.commandName === "inventory") {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
