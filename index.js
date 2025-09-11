@@ -487,10 +487,7 @@ if (interaction.isAutocomplete()) {
 
     // default
     return await interaction.respond([{ name: "Nessun risultato", value: "none" }]);
-  } catch (err) {
-    console.error("❌ Autocomplete error:", err);
-    try { await interaction.respond([{ name: "Errore", value: "none" }]); } catch {}
-  }
+  } 
 }
 
 
@@ -1108,6 +1105,7 @@ if (interaction.isCommand() && interaction.commandName === "removeinventory") {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
