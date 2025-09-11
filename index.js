@@ -115,10 +115,11 @@ const commands = [
   description: "Mostra il tuo personaggio",
   options: [
     {
-      name: "name",
+      name: "from_name",
       type: 3, // STRING
       description: "Nome del personaggio",
       required: true,
+      autocomplete: true
     },
   ],
 },
@@ -839,7 +840,7 @@ if (interaction.isChatInputCommand() && interaction.commandName === "deletepg") 
   try {
     await interaction.deferReply();
 
-    const name = interaction.options.getString("name");
+    const name = interaction.options.getString("from_name");
 
     // Recupero personaggio dell’utente
     const char = await Character.findOne({ userId: interaction.user.id, name });
@@ -883,6 +884,7 @@ if (interaction.isChatInputCommand() && interaction.commandName === "deletepg") 
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
