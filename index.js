@@ -1091,7 +1091,6 @@ if (interaction.isCommand() && interaction.commandName === "removeinventory") {
   }
 }
       await interaction.editReply("✅ Comando eseguito!");
-    }
   } catch (err) {
     console.error("❌ Errore in interactionCreate:", err);
     if (interaction.isRepliable() && !interaction.replied) {
@@ -1112,6 +1111,7 @@ if (interaction.isCommand() && interaction.commandName === "removeinventory") {
   
  
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
