@@ -917,6 +917,126 @@ if (interaction.isChatInputCommand() && interaction.commandName === "deletepg") 
   }
 }
 
+  // --- AUTOCOMPLETE per "item" (mostra gli item del pg solo se action === "remove") ---
+if (interaction.isAutocomplete()) {
+  try {
+    const focused = interaction.options.getFocused(true);
+
+    if (interaction.commandName === "inventory" && focused.name === "item") {
+      const action = interaction.options.getString("action");
+      // suggerimenti solo quando si sta rimuovendo
+      if (action !== "remove") {
+        await interaction.respond([]);
+        return;
+      }
+
+      const toUserId = interaction.options.get("to_user")?.value;
+      const toName = interaction.options.getString("to_name");
+
+      if (!toUserId || !toName) {
+        await interaction.respond([{ name: "Seleziona prima utente/pg", value: "none" }]);
+        return;
+      }
+
+      const char = await Character.findOne({ userId: toUserId, name: toName });
+      if (!char || !Array.isArray(char.inventory) || char.inventory.length === 0) {
+        await interaction.respond([{ name: "Nessun oggetto", value: "none" }]);
+        return;
+      }
+
+      const q = String(focused.value ?? "").toLowerCase();
+      const items = char.inventory
+        .filter(it => it.toLowerCase().includes(q))
+        .slice(0, 25)
+        .map(it => ({ name: it, value: it }));
+
+      await interaction.respond(items.length ? items : [{ name: "Nessun risultato", value: "none" }]);
+    }
+  } catch (err) {
+    console.error("❌ Autocomplete inventory error:", err);
+    try { await interaction.respond([{ name: "Errore", value: "none" }]); } catch {}
+  }
+  return;
+}
+
+// --- COMMAND HANDLER per /inventory (admin only) ---
+if (interaction.isCommand() && interaction.commandName === "inventory") {
+  try {
+    // evita che il comando scada mentre fai DB ops
+    await interaction.deferReply();
+
+    // controllo permessi admin
+    if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
+      await interaction.editReply("❌ Non hai il permesso per usare questo comando.");
+      return;
+    }
+
+    const user = interaction.options.getUser("to_user");
+    const name = interaction.options.getString("to_name");
+    const action = interaction.options.getString("action"); // "add" o "remove"
+    const item = interaction.options.getString("item");
+
+    // trova il pg
+    const char = await Character.findOne({ userId: user.id, name });
+    if (!char) {
+      await interaction.editReply(`❌ Personaggio **${name}** non trovato per ${user.username}.`);
+      return;
+    }
+
+    // Assicurati che esista l'array inventory (se non definito lo inizializziamo)
+    if (!Array.isArray(char.inventory)) char.inventory = [];
+
+    if (action === "add") {
+      if (!item || item.trim().length === 0) {
+        await interaction.editReply("❌ Devi specificare il nome dell'item da aggiungere.");
+        return;
+      }
+
+      // (opzionale) evita duplicati: scommenta se vuoi bloccare duplicati
+      // if (char.inventory.some(i => i.toLowerCase() === item.toLowerCase())) {
+      //   await interaction.editReply(`❌ L'item **${item}** è già presente nell'inventario di **${char.name}**.`);
+      //   return;
+      // }
+
+      char.inventory.push(item);
+      await char.save();
+
+      await interaction.editReply(`✅ Aggiunto **${item}** all'inventario di **${char.name}**.`);
+      return;
+    }
+
+    if (action === "remove") {
+      if (!item || item === "none") {
+        await interaction.editReply("❌ Devi scegliere un item valido da rimuovere.");
+        return;
+      }
+
+      const idx = char.inventory.findIndex(i => i.toLowerCase() === item.toLowerCase());
+      if (idx === -1) {
+        await interaction.editReply(`❌ L'oggetto **${item}** non è presente nell'inventario di **${char.name}**.`);
+        return;
+      }
+
+      const removed = char.inventory.splice(idx, 1)[0];
+      await char.save();
+
+      await interaction.editReply(`🗑️ Rimosso **${removed}** dall'inventario di **${char.name}**.`);
+      return;
+    }
+
+    await interaction.editReply("❌ Azione non valida. Usa `add` o `remove`.");
+  } catch (err) {
+    console.error("❌ Errore inventory command:", err);
+    // se abbiamo già deferito rispondi con editReply, altrimenti fallback su reply
+    if (interaction.deferred || interaction.replied) {
+      try { await interaction.editReply("⚠️ Errore interno, riprova più tardi."); } catch {}
+    } else {
+      try { await interaction.reply({ content: "⚠️ Errore interno, riprova più tardi.", ephemeral: true }); } catch {}
+    }
+  }
+}
+
+
 
 
  
@@ -925,6 +1045,7 @@ if (interaction.isChatInputCommand() && interaction.commandName === "deletepg") 
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
