@@ -110,6 +110,18 @@ const commands = [
       },
     ],
   },
+{
+  name: "show",
+  description: "Mostra il tuo personaggio",
+  options: [
+    {
+      name: "name",
+      type: 3, // STRING
+      description: "Nome del personaggio",
+      required: true,
+    },
+  ],
+},
   {
     name: "list",
     description: "Mostra la lista dei tuoi personaggi",
@@ -823,12 +835,55 @@ if (interaction.isChatInputCommand() && interaction.commandName === "deletepg") 
   }
 }
 
+  if (interaction.commandName === "show") {
+  try {
+    await interaction.deferReply();
+
+    const name = interaction.options.getString("name");
+
+    // Recupero personaggio dell’utente
+    const char = await Character.findOne({ userId: interaction.user.id, name });
+    if (!char) {
+      await interaction.editReply(`❌ Personaggio **${name}** non trovato.`);
+      return;
+    }
+
+    // Se non ha immagine
+    if (!char.image) {
+      await interaction.editReply(`ℹ️ Il personaggio **${char.name}** non ha ancora un'immagine.`);
+      return;
+    }
+
+    // Embed con nome e immagine
+    await interaction.editReply({
+      embeds: [
+        {
+          title: char.name,
+          description: `Creato da <@${interaction.user.id}>`,
+          image: { url: char.image },
+          color: 0x0099ff,
+        },
+      ],
+    });
+
+  } catch (err) {
+    console.error("❌ Errore show:", err);
+    if (interaction.deferred || interaction.replied) {
+      await interaction.editReply("⚠️ Errore interno, riprova più tardi.");
+    } else {
+      await interaction.reply({ content: "⚠️ Errore interno, riprova più tardi.", ephemeral: true });
+    }
+  }
+}
+
+
  
   
   
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
