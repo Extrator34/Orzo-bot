@@ -41,6 +41,7 @@ await mongoose.connect(process.env.MONGO_URI);
 const characterSchema = new mongoose.Schema({
   userId: String,
   name: String,
+  image: { type: String },
   money: { type: Number, default: 500 },
   karma: { type: Number, default: 0 },
   hpMax: { type: Number, default: 500 },
@@ -885,6 +886,7 @@ if (interaction.isChatInputCommand() && interaction.commandName === "deletepg") 
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
