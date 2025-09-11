@@ -836,26 +836,26 @@ if (interaction.isChatInputCommand() && interaction.commandName === "deletepg") 
   }
 }
 
-  if (interaction.commandName === "show") {
+ if (interaction.commandName === "show") {
   try {
     await interaction.deferReply();
 
     const name = interaction.options.getString("from_name");
 
-    // Recupero personaggio dell’utente
+    // recupero personaggio
     const char = await Character.findOne({ userId: interaction.user.id, name });
     if (!char) {
       await interaction.editReply(`❌ Personaggio **${name}** non trovato.`);
       return;
     }
 
-    // Se non ha immagine
+    // controllo immagine
     if (!char.image) {
       await interaction.editReply(`ℹ️ Il personaggio **${char.name}** non ha ancora un'immagine.`);
       return;
     }
 
-    // Embed con nome e immagine
+    // risposta con embed
     await interaction.editReply({
       embeds: [
         {
@@ -878,12 +878,14 @@ if (interaction.isChatInputCommand() && interaction.commandName === "deletepg") 
 }
 
 
+
  
   
   
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
