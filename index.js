@@ -52,6 +52,8 @@ const characterSchema = new mongoose.Schema({
 });
 const Character = mongoose.model("Character", characterSchema);
 
+const image = interaction.options.getAttachment("image");
+
 
   // tabella livelli
   const expTable = [
@@ -98,8 +100,14 @@ const commands = [
     options: [
       {
         name: "name",
-        type: 3,
+        type: 3, // STRING
         description: "Nome del personaggio",
+        required: true,
+      },
+      {
+        name: "image",
+        type: 11, // ATTACHMENT
+        description: "Immagine del personaggio",
         required: true,
       },
     ],
@@ -388,12 +396,50 @@ client.on("interactionCreate", async (interaction) => {
   
   if (!interaction.isCommand()) return;
 
-  if (interaction.commandName === "create") {
+if (interaction.commandName === "create") {
+  try {
+    await interaction.deferReply();
+
     const name = interaction.options.getString("name");
-    const newChar = new Character({ userId: interaction.user.id, name });
+    const image = interaction.options.getAttachment("image");
+
+    // Controllo che sia effettivamente un'immagine
+    if (!image || !image.contentType.startsWith("image/")) {
+      await interaction.editReply("❌ Devi caricare un file immagine valido (jpg, png, ecc).");
+      return;
+    }
+
+    // Creazione personaggio con immagine
+    const newChar = new Character({
+      userId: interaction.user.id,
+      name,
+      image: image.url, // salvo il link diretto all'immagine
+    });
+
     await newChar.save();
-    await interaction.reply(`✅ Personaggio **${name}** creato!`);
+
+    await interaction.editReply({
+      content: `✅ Personaggio **${name}** creato con successo!`,
+      embeds: [
+        {
+          title: name,
+          description: `Creato da <@${interaction.user.id}>`,
+          image: { url: image.url },
+          color: 0x00ff99,
+        },
+      ],
+    });
+
+  } catch (err) {
+    console.error("❌ Errore create:", err);
+    if (interaction.deferred || interaction.replied) {
+      await interaction.editReply("⚠️ Errore interno, riprova più tardi.");
+    } else {
+      await interaction.reply({ content: "⚠️ Errore interno, riprova più tardi.", ephemeral: true });
+    }
   }
+}
+
 
 if (interaction.commandName === "list") {
   await interaction.deferReply(); // <-- così non scade
@@ -785,6 +831,7 @@ if (interaction.isChatInputCommand() && interaction.commandName === "deletepg") 
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
