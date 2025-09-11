@@ -54,6 +54,8 @@ const characterSchema = new mongoose.Schema({
 });
 const Character = mongoose.model("Character", characterSchema);
 
+const normalize = (s) => (s ?? "").toString().trim().toLowerCase();
+
 
   // tabella livelli
   const expTable = [
@@ -443,6 +445,49 @@ client.on("interactionCreate", async (interaction) => {
   await interaction.respond(choices.slice(0, 25).length ? choices.slice(0, 25) : [{ name: "Nessun risultato", value: "none" }]);
   return;
 }
+
+    // --- AUTOCOMPLETE HANDLER per "item" in /inventory ---
+if (interaction.isAutocomplete() && interaction.commandName === "inventory") {
+  try {
+    const action = interaction.options.getString("action");
+    const itemFocused = interaction.options.getFocused(true);
+
+    // autocomplete serve solo per remove
+    if (action !== "remove" || itemFocused.name !== "item") {
+      await interaction.respond([]);
+      return;
+    }
+
+    const user = interaction.options.getUser("to_user");
+    const name = interaction.options.getString("to_name");
+
+    if (!user || !name) {
+      await interaction.respond([]);
+      return;
+    }
+
+    // trova il pg
+    const char = await Character.findOne({ userId: user.id, name });
+    if (!char || !Array.isArray(char.inventory)) {
+      await interaction.respond([]);
+      return;
+    }
+
+    const query = itemFocused.value?.toLowerCase() ?? "";
+
+    // filtro items in base a cosa sta digitando l'admin
+    const suggestions = char.inventory
+      .filter(i => i.toLowerCase().includes(query))
+      .slice(0, 25) // massimo 25 per Discord
+      .map(i => ({ name: i, value: i }));
+
+    await interaction.respond(suggestions);
+  } catch (err) {
+    console.error("❌ Errore autocomplete item:", err);
+    try { await interaction.respond([]); } catch {}
+  }
+}
+
 
   
   if (!interaction.isCommand()) return;
@@ -959,6 +1004,10 @@ if (interaction.isAutocomplete()) {
   return;
 }
 
+
+
+
+
 // --- COMMAND HANDLER per /inventory (admin only) ---
 if (interaction.isCommand() && interaction.commandName === "inventory") {
   try {
@@ -983,35 +1032,63 @@ if (interaction.isCommand() && interaction.commandName === "inventory") {
       return;
     }
 
-    // Assicurati che esista l'array inventory (se non definito lo inizializziamo)
+    // assicuriamoci che esista sempre l’array inventory
     if (!Array.isArray(char.inventory)) char.inventory = [];
 
+    // helper normalizzazione
+    const normalize = (s) => (s ?? "").toString().trim().toLowerCase();
+
+    // --- ADD ---
     if (action === "add") {
       if (!item || item.trim().length === 0) {
         await interaction.editReply("❌ Devi specificare il nome dell'item da aggiungere.");
         return;
       }
 
-      // (opzionale) evita duplicati: scommenta se vuoi bloccare duplicati
-      // if (char.inventory.some(i => i.toLowerCase() === item.toLowerCase())) {
-      //   await interaction.editReply(`❌ L'item **${item}** è già presente nell'inventario di **${char.name}**.`);
+      const itemTrim = item.trim();
+
+      // opzionale: blocco duplicati
+      // if (char.inventory.some(i => normalize(i) === normalize(itemTrim))) {
+      //   await interaction.editReply(`❌ L'item **${itemTrim}** è già presente nell'inventario di **${char.name}**.`);
       //   return;
       // }
 
-      char.inventory.push(item);
+      char.inventory.push(itemTrim);
       await char.save();
 
-      await interaction.editReply(`✅ Aggiunto **${item}** all'inventario di **${char.name}**.`);
+      await interaction.editReply(`✅ Aggiunto **${itemTrim}** all'inventario di **${char.name}**.`);
       return;
     }
 
+    // --- REMOVE ---
     if (action === "remove") {
       if (!item || item === "none") {
         await interaction.editReply("❌ Devi scegliere un item valido da rimuovere.");
         return;
       }
 
-      const idx = char.inventory.findIndex(i => i.toLowerCase() === item.toLowerCase());
+      if (char.inventory.length === 0) {
+        await interaction.editReply(`❌ L'inventario di **${char.name}** è vuoto.`);
+        return;
+      }
+
+      const itemNorm = normalize(item);
+      let idx = char.inventory.findIndex(i => normalize(i) === itemNorm);
+
+      // fallback fuzzy se non trova match esatto
+      if (idx === -1) {
+        const matches = char.inventory.filter(i => normalize(i).includes(itemNorm));
+        if (matches.length === 1) {
+          const matchNorm = normalize(matches[0]);
+          idx = char.inventory.findIndex(i => normalize(i) === matchNorm);
+        } else if (matches.length > 1) {
+          await interaction.editReply(
+            `❌ Trovati più oggetti simili: ${matches.slice(0, 5).join(", ")}. Usa il nome esatto.`
+          );
+          return;
+        }
+      }
+
       if (idx === -1) {
         await interaction.editReply(`❌ L'oggetto **${item}** non è presente nell'inventario di **${char.name}**.`);
         return;
@@ -1024,10 +1101,10 @@ if (interaction.isCommand() && interaction.commandName === "inventory") {
       return;
     }
 
+    // --- fallback azione non valida ---
     await interaction.editReply("❌ Azione non valida. Usa `add` o `remove`.");
   } catch (err) {
     console.error("❌ Errore inventory command:", err);
-    // se abbiamo già deferito rispondi con editReply, altrimenti fallback su reply
     if (interaction.deferred || interaction.replied) {
       try { await interaction.editReply("⚠️ Errore interno, riprova più tardi."); } catch {}
     } else {
@@ -1036,15 +1113,13 @@ if (interaction.isCommand() && interaction.commandName === "inventory") {
   }
 }
 
-
-
-
  
   
   
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
