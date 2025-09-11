@@ -442,51 +442,30 @@ client.on("interactionCreate", async (interaction) => {
     }
   }
 
+     // --- autocomplete inventory items ---
+      else if (interaction.commandName === "inventory" && focused.name === "item") {
+        const action = interaction.options.getString("action");
+        if (action === "remove") {
+          const user = interaction.options.getUser("to_user");
+          const name = interaction.options.getString("to_name");
+          if (user && name) {
+            const char = await Character.findOne({ userId: user.id, name });
+            if (char && Array.isArray(char.inventory)) {
+              const query = focused.value?.toLowerCase() ?? "";
+              choices = char.inventory
+                .filter(i => i.toLowerCase().includes(query))
+                .slice(0, 25)
+                .map(i => ({ name: i, value: i }));
+            }
+          }
+        }
+      }
+    
+
   await interaction.respond(choices.slice(0, 25).length ? choices.slice(0, 25) : [{ name: "Nessun risultato", value: "none" }]);
   return;
 }
 
-    // --- AUTOCOMPLETE HANDLER per "item" in /inventory ---
-if (interaction.isAutocomplete() && interaction.commandName === "inventory") {
-  try {
-    const action = interaction.options.getString("action");
-    const itemFocused = interaction.options.getFocused(true);
-
-    // autocomplete serve solo per remove
-    if (action !== "remove" || itemFocused.name !== "item") {
-      await interaction.respond([]);
-      return;
-    }
-
-    const user = interaction.options.getUser("to_user");
-    const name = interaction.options.getString("to_name");
-
-    if (!user || !name) {
-      await interaction.respond([]);
-      return;
-    }
-
-    // trova il pg
-    const char = await Character.findOne({ userId: user.id, name });
-    if (!char || !Array.isArray(char.inventory)) {
-      await interaction.respond([]);
-      return;
-    }
-
-    const query = itemFocused.value?.toLowerCase() ?? "";
-
-    // filtro items in base a cosa sta digitando l'admin
-    const suggestions = char.inventory
-      .filter(i => i.toLowerCase().includes(query))
-      .slice(0, 25) // massimo 25 per Discord
-      .map(i => ({ name: i, value: i }));
-
-    await interaction.respond(suggestions);
-  } catch (err) {
-    console.error("❌ Errore autocomplete item:", err);
-    try { await interaction.respond([]); } catch {}
-  }
-}
 
 
   
@@ -1119,6 +1098,7 @@ if (interaction.isCommand() && interaction.commandName === "inventory") {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
