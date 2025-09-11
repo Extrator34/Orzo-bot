@@ -349,7 +349,7 @@ const commands = [
       required: true,
     },
   ],
-}
+},
 
   {
   name: "inventory",
@@ -1045,6 +1045,7 @@ if (interaction.isCommand() && interaction.commandName === "inventory") {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
