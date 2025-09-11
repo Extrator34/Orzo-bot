@@ -959,7 +959,7 @@ if (interaction.isAutocomplete()) {
 }
 
 // --- COMMAND HANDLER per /inventory (admin only) ---
-if (interaction.isCommand() && interaction.commandName === "inventory") {
+if (interaction.isCommand() && interaction.commandName === "modifyinventory") {
   try {
     // evita che il comando scada mentre fai DB ops
     await interaction.deferReply();
@@ -1044,6 +1044,7 @@ if (interaction.isCommand() && interaction.commandName === "inventory") {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
