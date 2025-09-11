@@ -351,6 +351,44 @@ const commands = [
   ],
 }
 
+  {
+  name: "inventory",
+  description: "Gestisci l'inventario di un personaggio",
+  options: [
+    {
+      name: "to_user",
+      type: 6, // USER
+      description: "Utente proprietario del personaggio",
+      required: true,
+    },
+    {
+      name: "to_name",
+      type: 3, // STRING
+      description: "Nome del personaggio",
+      required: true,
+      autocomplete: true,
+    },
+    {
+      name: "action",
+      type: 3, // STRING
+      description: "Aggiungi o rimuovi un item",
+      required: true,
+      choices: [
+        { name: "Aggiungi", value: "add" },
+        { name: "Rimuovi", value: "remove" },
+      ],
+    },
+    {
+      name: "item",
+      type: 3, // STRING
+      description: "Nome dell'oggetto",
+      required: true,
+      autocomplete: true, // 🔥
+    },
+  ],
+}
+
+
 
 
 
@@ -887,6 +925,7 @@ if (interaction.isChatInputCommand() && interaction.commandName === "deletepg") 
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
