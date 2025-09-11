@@ -440,15 +440,16 @@ if (interaction.isAutocomplete()) {
     const focused = interaction.options.getFocused(true); // { name, value }
     const field = focused.name;
 
-  if (field === "from_name") {
-    const chars = await Character.find({ userId: interaction.user.id });
-    choices = chars.map(c => ({
-      name: `${c.name}`,
-      value: c.name
-    }));
+    // 1) Autocomplete per from_name → tutti i pg dell'utente che usa il comando
+    if (field === "from_name") {
+      const chars = await Character.find({ userId: interaction.user.id }).limit(25);
+      const choices = chars.length
+        ? chars.map(c => ({ name: c.name, value: c.name }))
+        : [{ name: "Nessun personaggio", value: "none" }];
+      return await interaction.respond(choices);
+    }
 
-
-    // 1) Autocomplete per "to_name" (usato da vari comandi)
+    // 2) Autocomplete per to_name → serve to_user prima
     if (field === "to_name") {
       const toUserId = interaction.options.get("to_user")?.value;
       if (!toUserId) {
@@ -461,7 +462,7 @@ if (interaction.isAutocomplete()) {
       return await interaction.respond(choices);
     }
 
-    // 2) Autocomplete per "item" ma SOLO per il comando removeinventory
+    // 3) Autocomplete per item (SOLO per removeinventory)
     if (cmd === "removeinventory" && field === "item") {
       const toUserId = interaction.options.get("to_user")?.value;
       const toName = interaction.options.getString("to_name");
@@ -469,15 +470,18 @@ if (interaction.isAutocomplete()) {
         return await interaction.respond([{ name: "Seleziona prima utente/pg", value: "none" }]);
       }
 
-      // prendi solo inventory per performance
-      const char = await Character.findOne({ userId: toUserId, name: toName }, { inventory: 1 });
+      const char = await Character.findOne(
+        { userId: toUserId, name: toName },
+        { inventory: 1 }
+      );
+
       if (!char || !Array.isArray(char.inventory) || char.inventory.length === 0) {
         return await interaction.respond([{ name: "Nessun oggetto", value: "none" }]);
       }
 
       const q = String(focused.value ?? "").toLowerCase();
       const items = char.inventory
-        .map(i => String(i).trim())              // normalizza
+        .map(i => String(i).trim())
         .filter(i => i.toLowerCase().includes(q))
         .slice(0, 25)
         .map(i => ({ name: i, value: i }));
@@ -485,10 +489,14 @@ if (interaction.isAutocomplete()) {
       return await interaction.respond(items.length ? items : [{ name: "Nessun risultato", value: "none" }]);
     }
 
-    // default
+    // fallback
     return await interaction.respond([{ name: "Nessun risultato", value: "none" }]);
-  } 
+  } catch (err) {
+    console.error("❌ Errore autocomplete:", err);
+    return await interaction.respond([{ name: "Errore interno", value: "none" }]);
+  }
 }
+
 
 
 
@@ -1105,6 +1113,7 @@ if (interaction.isCommand() && interaction.commandName === "removeinventory") {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
