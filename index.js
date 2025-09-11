@@ -52,8 +52,6 @@ const characterSchema = new mongoose.Schema({
 });
 const Character = mongoose.model("Character", characterSchema);
 
-const image = interaction.options.getAttachment("image");
-
 
   // tabella livelli
   const expTable = [
@@ -831,6 +829,7 @@ if (interaction.isChatInputCommand() && interaction.commandName === "deletepg") 
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
