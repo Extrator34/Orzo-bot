@@ -50,6 +50,7 @@ const characterSchema = new mongoose.Schema({
   expTotale: { type: Number, default: 0 },
   expMostrata: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now },
+  inventory: { type: [String], default: [] },
 });
 const Character = mongoose.model("Character", characterSchema);
 
@@ -886,6 +887,7 @@ if (interaction.isChatInputCommand() && interaction.commandName === "deletepg") 
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
