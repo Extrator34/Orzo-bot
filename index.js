@@ -773,8 +773,6 @@ if (interaction.commandName === "list") {
   );
 }
 
-   } catch (err) {
-    console.error("❌ Errore in interactionCreate:", err);
 
     // tenta di inviare un messaggio all’utente se possibile
     if (interaction.isRepliable()) {
@@ -1114,6 +1112,7 @@ if (interaction.isCommand() && interaction.commandName === "removeinventory") {
   
  
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
