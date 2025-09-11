@@ -433,76 +433,65 @@ client.on("clientReady", () => {
 
 client.on("interactionCreate", async (interaction) => {
   try {
-  // Metti questo blocco *all'inizio* del tuo interactionCreate (prima dei comandi)
-if (interaction.isAutocomplete()) {
-  try {
-    const cmd = interaction.commandName;
-    const focused = interaction.options.getFocused(true); // { name, value }
-    const field = focused.name;
+    // 1) AUTOCOMPLETE
+    if (interaction.isAutocomplete()) {
+      try {
+        const cmd = interaction.commandName;
+        const focused = interaction.options.getFocused(true);
+        const field = focused.name;
 
-    // 1) Autocomplete per from_name → tutti i pg dell'utente che usa il comando
-    if (field === "from_name") {
-      const chars = await Character.find({ userId: interaction.user.id }).limit(25);
-      const choices = chars.length
-        ? chars.map(c => ({ name: c.name, value: c.name }))
-        : [{ name: "Nessun personaggio", value: "none" }];
-      return await interaction.respond(choices);
+        if (field === "from_name") {
+          const chars = await Character.find({ userId: interaction.user.id }).limit(25);
+          const choices = chars.map(c => ({ name: c.name, value: c.name }));
+          return await interaction.respond(choices);
+        }
+
+        if (field === "to_name") {
+          const toUserId = interaction.options.get("to_user")?.value;
+          if (!toUserId) {
+            return await interaction.respond([{ name: "Seleziona prima l'utente", value: "none" }]);
+          }
+          const chars = await Character.find({ userId: toUserId }).limit(25);
+          const choices = chars.map(c => ({ name: c.name, value: c.name }));
+          return await interaction.respond(choices);
+        }
+
+        if (cmd === "removeinventory" && field === "item") {
+          const toUserId = interaction.options.get("to_user")?.value;
+          const toName = interaction.options.getString("to_name");
+          if (!toUserId || !toName) {
+            return await interaction.respond([{ name: "Seleziona prima utente/pg", value: "none" }]);
+          }
+
+          const char = await Character.findOne({ userId: toUserId, name: toName });
+          if (!char?.inventory?.length) {
+            return await interaction.respond([{ name: "Nessun oggetto", value: "none" }]);
+          }
+
+          const q = focused.value.toLowerCase();
+          const items = char.inventory
+            .filter(i => i.toLowerCase().includes(q))
+            .slice(0, 25)
+            .map(i => ({ name: i, value: i }));
+
+          return await interaction.respond(items.length ? items : [{ name: "Nessun risultato", value: "none" }]);
+        }
+
+        // fallback
+        return await interaction.respond([{ name: "Nessun risultato", value: "none" }]);
+      } catch (err) {
+        console.error("❌ Errore autocomplete:", err);
+        if (!interaction.responded) {
+          return await interaction.respond([{ name: "Errore interno", value: "none" }]);
+        }
+      }
+      return; // <--- IMPORTANTISSIMO: ferma qui l'autocomplete
     }
 
-    // 2) Autocomplete per to_name → serve to_user prima
-    if (field === "to_name") {
-      const toUserId = interaction.options.get("to_user")?.value;
-      if (!toUserId) {
-        return await interaction.respond([{ name: "Seleziona prima l'utente", value: "none" }]);
-      }
-      const chars = await Character.find({ userId: toUserId }).limit(25);
-      const choices = chars.length
-        ? chars.map(c => ({ name: c.name, value: c.name }))
-        : [{ name: "Nessun personaggio trovato", value: "none" }];
-      return await interaction.respond(choices);
-    }
-
-    // 3) Autocomplete per item (SOLO per removeinventory)
-    if (cmd === "removeinventory" && field === "item") {
-      const toUserId = interaction.options.get("to_user")?.value;
-      const toName = interaction.options.getString("to_name");
-      if (!toUserId || !toName) {
-        return await interaction.respond([{ name: "Seleziona prima utente/pg", value: "none" }]);
-      }
-
-      const char = await Character.findOne(
-        { userId: toUserId, name: toName },
-        { inventory: 1 }
-      );
-
-      if (!char || !Array.isArray(char.inventory) || char.inventory.length === 0) {
-        return await interaction.respond([{ name: "Nessun oggetto", value: "none" }]);
-      }
-
-      const q = String(focused.value ?? "").toLowerCase();
-      const items = char.inventory
-        .map(i => String(i).trim())
-        .filter(i => i.toLowerCase().includes(q))
-        .slice(0, 25)
-        .map(i => ({ name: i, value: i }));
-
-      return await interaction.respond(items.length ? items : [{ name: "Nessun risultato", value: "none" }]);
-    }
-
-    // fallback
-    return await interaction.respond([{ name: "Nessun risultato", value: "none" }]);
-  } catch (err) {
-    console.error("❌ Errore autocomplete:", err);
-    return await interaction.respond([{ name: "Errore interno", value: "none" }]);
-  }
-}
-
-
-
-
-
-  
-  if (!interaction.isCommand()) return;
+    // 2) COMANDI NORMALI
+    if (interaction.isChatInputCommand()) {
+      await interaction.deferReply({ ephemeral: false });
+       if (!interaction.isCommand()) return;
 
 if (interaction.commandName === "create") {
   try {
@@ -1103,16 +1092,29 @@ if (interaction.isCommand() && interaction.commandName === "removeinventory") {
     } catch {}
   }
 }
+      await interaction.editReply("✅ Comando eseguito!");
+    }
+  } catch (err) {
+    console.error("❌ Errore in interactionCreate:", err);
+    if (interaction.isRepliable() && !interaction.replied) {
+      await interaction.reply({ content: "Errore interno", ephemeral: true });
+    }
+  }
 
 
 
 
- 
-  
+
+
+
+
   
 });
 
+  
+ 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
