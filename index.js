@@ -433,57 +433,68 @@ client.on("clientReady", () => {
 
 client.on("interactionCreate", async (interaction) => {
   try {
-  if (interaction.isAutocomplete()) {
-  const focused = interaction.options.getFocused(true);
-  let choices = [];
+  // Metti questo blocco *all'inizio* del tuo interactionCreate (prima dei comandi)
+if (interaction.isAutocomplete()) {
+  try {
+    const cmd = interaction.commandName;
+    const focused = interaction.options.getFocused(true); // { name, value }
+    const field = focused.name;
 
-  if (focused.name === "from_name") {
+  if (field === "from_name") {
     const chars = await Character.find({ userId: interaction.user.id });
     choices = chars.map(c => ({
       name: `${c.name}`,
       value: c.name
     }));
 
-if (interaction.commandName === "removeinventory" && focused.name === "item") {
+
+    // 1) Autocomplete per "to_name" (usato da vari comandi)
+    if (field === "to_name") {
+      const toUserId = interaction.options.get("to_user")?.value;
+      if (!toUserId) {
+        return await interaction.respond([{ name: "Seleziona prima l'utente", value: "none" }]);
+      }
+      const chars = await Character.find({ userId: toUserId }).limit(25);
+      const choices = chars.length
+        ? chars.map(c => ({ name: c.name, value: c.name }))
+        : [{ name: "Nessun personaggio trovato", value: "none" }];
+      return await interaction.respond(choices);
+    }
+
+    // 2) Autocomplete per "item" ma SOLO per il comando removeinventory
+    if (cmd === "removeinventory" && field === "item") {
       const toUserId = interaction.options.get("to_user")?.value;
       const toName = interaction.options.getString("to_name");
-
       if (!toUserId || !toName) {
-        choices = [{ name: "Seleziona prima utente/pg", value: "none" }];
-      } else {
-        const char = await Character.findOne({ userId: toUserId, name: toName });
-        if (!char || !Array.isArray(char.inventory) || char.inventory.length === 0) {
-          choices = [{ name: "Nessun oggetto", value: "none" }];
-        } else {
-          const q = (focused.value ?? "").toLowerCase();
-          choices = char.inventory
-            .filter(i => i.toLowerCase().includes(q))
-            .slice(0, 25)
-            .map(i => ({ name: i, value: i }));
-        }
+        return await interaction.respond([{ name: "Seleziona prima utente/pg", value: "none" }]);
       }
+
+      // prendi solo inventory per performance
+      const char = await Character.findOne({ userId: toUserId, name: toName }, { inventory: 1 });
+      if (!char || !Array.isArray(char.inventory) || char.inventory.length === 0) {
+        return await interaction.respond([{ name: "Nessun oggetto", value: "none" }]);
+      }
+
+      const q = String(focused.value ?? "").toLowerCase();
+      const items = char.inventory
+        .map(i => String(i).trim())              // normalizza
+        .filter(i => i.toLowerCase().includes(q))
+        .slice(0, 25)
+        .map(i => ({ name: i, value: i }));
+
+      return await interaction.respond(items.length ? items : [{ name: "Nessun risultato", value: "none" }]);
     }
 
+    // default
+    return await interaction.respond([{ name: "Nessun risultato", value: "none" }]);
+  } catch (err) {
+    console.error("❌ Autocomplete error:", err);
+    try { await interaction.respond([{ name: "Errore", value: "none" }]); } catch {}
   }
-
-  if (focused.name === "to_name") {
-    const toOption = interaction.options.get("to_user");
-    const toUserId = toOption?.value;
-
-    if (!toUserId) {
-      // Se non hai scelto ancora l'utente
-      choices = [{ name: "Seleziona prima l'utente", value: "none" }];
-    } else {
-      const chars = await Character.find({ userId: toUserId });
-      choices = chars.length
-        ? chars.map(c => ({ name: `${c.name}`, value: c.name }))
-        : [{ name: "Nessun personaggio trovato", value: "none" }];
-    }
-  }
-
-  await interaction.respond(choices.slice(0, 25).length ? choices.slice(0, 25) : [{ name: "Nessun risultato", value: "none" }]);
-  return;
 }
+
+
+
 
   
   if (!interaction.isCommand()) return;
@@ -1036,47 +1047,58 @@ if (interaction.isCommand() && interaction.commandName === "addinventory") {
   }
 }
 
-// /removeinventory
 if (interaction.isCommand() && interaction.commandName === "removeinventory") {
   try {
     await interaction.deferReply();
 
+    // permessi admin
     if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
-      await interaction.editReply("❌ Non hai il permesso per usare questo comando.");
-      return;
+      return await interaction.editReply("❌ Non hai il permesso per usare questo comando.");
     }
 
     const user = interaction.options.getUser("to_user");
     const name = interaction.options.getString("to_name");
-    const item = interaction.options.getString("item");
+    const itemRaw = interaction.options.getString("item");
 
     const char = await Character.findOne({ userId: user.id, name });
     if (!char) {
-      await interaction.editReply(`❌ Personaggio **${name}** non trovato per ${user.username}.`);
-      return;
+      return await interaction.editReply(`❌ Personaggio **${name}** non trovato per ${user.username}.`);
     }
 
-    if (!Array.isArray(char.inventory)) char.inventory = [];
+    if (!Array.isArray(char.inventory) || char.inventory.length === 0) {
+      return await interaction.editReply(`❌ L'inventario di **${char.name}** è vuoto.`);
+    }
 
-    const idx = char.inventory.findIndex(i => i.toLowerCase() === item.toLowerCase());
+    // normalizza input e inventory
+    const item = String(itemRaw ?? "").trim();
+    if (!item || item.toLowerCase() === "none") {
+      return await interaction.editReply("❌ Devi scegliere un item valido da rimuovere.");
+    }
+
+    // trova item ignorando case/whitespace
+    const idx = char.inventory.findIndex(i => String(i ?? "").trim().toLowerCase() === item.toLowerCase());
     if (idx === -1) {
-      await interaction.editReply(`❌ L'oggetto **${item}** non è presente nell'inventario di **${char.name}**.`);
-      return;
+      return await interaction.editReply(`❌ L'oggetto **${item}** non è presente nell'inventario di **${char.name}**.`);
     }
 
     const removed = char.inventory.splice(idx, 1)[0];
+    // salva inventory normalizzando ogni entry (opzionale ma consigliato)
+    char.inventory = char.inventory.map(i => String(i).trim());
     await char.save();
 
     await interaction.editReply(`🗑️ Rimosso **${removed}** dall'inventario di **${char.name}**.`);
   } catch (err) {
     console.error("❌ Errore removeinventory:", err);
-    if (interaction.deferred || interaction.replied) {
-      try { await interaction.editReply("⚠️ Errore interno, riprova più tardi."); } catch {}
-    } else {
-      try { await interaction.reply({ content: "⚠️ Errore interno, riprova più tardi.", ephemeral: true }); } catch {}
-    }
+    try {
+      if (interaction.deferred || interaction.replied) {
+        await interaction.editReply("⚠️ Errore interno, riprova più tardi.");
+      } else {
+        await interaction.reply({ content: "⚠️ Errore interno, riprova più tardi.", ephemeral: true });
+      }
+    } catch {}
   }
 }
+
 
 
 
@@ -1086,6 +1108,7 @@ if (interaction.isCommand() && interaction.commandName === "removeinventory") {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
