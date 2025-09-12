@@ -541,7 +541,7 @@ if (interaction.commandName === "create") {
     if (interaction.deferred || interaction.replied) {
       await interaction.editReply("⚠️ Errore interno, riprova più tardi.");
     } else {
-      await interaction.reply({ content: "⚠️ Errore interno, riprova più tardi.", ephemeral: true });
+      await interaction.reply({ content: "⚠️ Errore interno, riprova più tardi." });
     }
   }
 }
@@ -582,7 +582,7 @@ if (interaction.commandName === "list") {
       if (interaction.deferred || interaction.replied) {
         await interaction.editReply("⚠️ Errore interno, riprova più tardi.");
       } else {
-        await interaction.reply({ content: "⚠️ Errore interno, riprova più tardi.", ephemeral: true });
+        await interaction.reply({ content: "⚠️ Errore interno, riprova più tardi." });
       }
     } catch {
       // ignoro eventuali errori secondari
@@ -907,7 +907,7 @@ if (interaction.isChatInputCommand() && interaction.commandName === "deletepg") 
 
   if (interaction.isChatInputCommand() && interaction.commandName === "addkarma") {
   try {
-    await interaction.deferReply(); // senza ephemeral
+    await interaction.deferReply(); 
 
     if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
       await interaction.editReply("❌ Non hai il permesso per usare questo comando.");
@@ -982,7 +982,7 @@ if (interaction.isChatInputCommand() && interaction.commandName === "deletepg") 
     if (interaction.deferred || interaction.replied) {
       await interaction.editReply("⚠️ Errore interno, riprova più tardi.");
     } else {
-      await interaction.reply({ content: "⚠️ Errore interno, riprova più tardi.", ephemeral: true });
+      await interaction.reply({ content: "⚠️ Errore interno, riprova più tardi." });
     }
   }
 }
@@ -1018,7 +1018,7 @@ if (interaction.isCommand() && interaction.commandName === "addinventory") {
     if (interaction.deferred || interaction.replied) {
       try { await interaction.editReply("⚠️ Errore interno, riprova più tardi."); } catch {}
     } else {
-      try { await interaction.reply({ content: "⚠️ Errore interno, riprova più tardi.", ephemeral: true }); } catch {}
+      try { await interaction.reply({ content: "⚠️ Errore interno, riprova più tardi." }); } catch {}
     }
   }
 }
@@ -1060,7 +1060,7 @@ if (interaction.isCommand() && interaction.commandName === "removeinventory") {
     if (interaction.deferred || interaction.replied) {
       try { await interaction.editReply("⚠️ Errore interno, riprova più tardi."); } catch {}
     } else {
-      try { await interaction.reply({ content: "⚠️ Errore interno, riprova più tardi.", ephemeral: true }); } catch {}
+      try { await interaction.reply({ content: "⚠️ Errore interno, riprova più tardi." }); } catch {}
     }
   }
 }
@@ -1115,7 +1115,7 @@ if (interaction.isCommand() && interaction.commandName === "give") {
     if (interaction.deferred || interaction.replied) {
       try { await interaction.editReply("⚠️ Errore interno, riprova più tardi."); } catch {}
     } else {
-      try { await interaction.reply({ content: "⚠️ Errore interno, riprova più tardi.", ephemeral: true }); } catch {}
+      try { await interaction.reply({ content: "⚠️ Errore interno, riprova più tardi." }); } catch {}
     }
   }
 }
@@ -1126,6 +1126,7 @@ if (interaction.isCommand() && interaction.commandName === "give") {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
