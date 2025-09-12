@@ -433,65 +433,60 @@ client.on("clientReady", () => {
 
 client.on("interactionCreate", async (interaction) => {
   try {
-    // 1) AUTOCOMPLETE
-    if (interaction.isAutocomplete()) {
-      try {
-        const cmd = interaction.commandName;
-        const focused = interaction.options.getFocused(true);
-        const field = focused.name;
+  if (interaction.isAutocomplete()) {
+  const focused = interaction.options.getFocused(true);
+  let choices = [];
 
-        if (field === "from_name") {
-          const chars = await Character.find({ userId: interaction.user.id }).limit(25);
-          const choices = chars.map(c => ({ name: c.name, value: c.name }));
-          return await interaction.respond(choices);
-        }
+  if (focused.name === "from_name") {
+    const chars = await Character.find({ userId: interaction.user.id });
+    choices = chars.map(c => ({
+      name: `${c.name}`,
+      value: c.name
+    }));
 
-        if (field === "to_name") {
-          const toUserId = interaction.options.get("to_user")?.value;
-          if (!toUserId) {
-            return await interaction.respond([{ name: "Seleziona prima l'utente", value: "none" }]);
-          }
-          const chars = await Character.find({ userId: toUserId }).limit(25);
-          const choices = chars.map(c => ({ name: c.name, value: c.name }));
-          return await interaction.respond(choices);
-        }
+if (interaction.commandName === "removeinventory" && focused.name === "item") {
+      const toUserId = interaction.options.get("to_user")?.value;
+      const toName = interaction.options.getString("to_name");
 
-        if (cmd === "removeinventory" && field === "item") {
-          const toUserId = interaction.options.get("to_user")?.value;
-          const toName = interaction.options.getString("to_name");
-          if (!toUserId || !toName) {
-            return await interaction.respond([{ name: "Seleziona prima utente/pg", value: "none" }]);
-          }
-
-          const char = await Character.findOne({ userId: toUserId, name: toName });
-          if (!char?.inventory?.length) {
-            return await interaction.respond([{ name: "Nessun oggetto", value: "none" }]);
-          }
-
-          const q = focused.value.toLowerCase();
-          const items = char.inventory
+      if (!toUserId || !toName) {
+        choices = [{ name: "Seleziona prima utente/pg", value: "none" }];
+      } else {
+        const char = await Character.findOne({ userId: toUserId, name: toName });
+        if (!char || !Array.isArray(char.inventory) || char.inventory.length === 0) {
+          choices = [{ name: "Nessun oggetto", value: "none" }];
+        } else {
+          const q = (focused.value ?? "").toLowerCase();
+          choices = char.inventory
             .filter(i => i.toLowerCase().includes(q))
             .slice(0, 25)
             .map(i => ({ name: i, value: i }));
-
-          return await interaction.respond(items.length ? items : [{ name: "Nessun risultato", value: "none" }]);
-        }
-
-        // fallback
-        return await interaction.respond([{ name: "Nessun risultato", value: "none" }]);
-      } catch (err) {
-        console.error("❌ Errore autocomplete:", err);
-        if (!interaction.responded) {
-          return await interaction.respond([{ name: "Errore interno", value: "none" }]);
         }
       }
-      return; // <--- IMPORTANTISSIMO: ferma qui l'autocomplete
     }
 
-    // 2) COMANDI NORMALI
-    if (interaction.isChatInputCommand()) {
-      await interaction.deferReply({ ephemeral: false });
-       if (!interaction.isCommand()) return;
+  }
+
+  if (focused.name === "to_name") {
+    const toOption = interaction.options.get("to_user");
+    const toUserId = toOption?.value;
+
+    if (!toUserId) {
+      // Se non hai scelto ancora l'utente
+      choices = [{ name: "Seleziona prima l'utente", value: "none" }];
+    } else {
+      const chars = await Character.find({ userId: toUserId });
+      choices = chars.length
+        ? chars.map(c => ({ name: `${c.name}`, value: c.name }))
+        : [{ name: "Nessun personaggio trovato", value: "none" }];
+    }
+  }
+
+  await interaction.respond(choices.slice(0, 25).length ? choices.slice(0, 25) : [{ name: "Nessun risultato", value: "none" }]);
+  return;
+}
+
+  
+  if (!interaction.isCommand()) return;
 
 if (interaction.commandName === "create") {
   try {
@@ -773,6 +768,8 @@ if (interaction.commandName === "list") {
   );
 }
 
+   } catch (err) {
+    console.error("❌ Errore in interactionCreate:", err);
 
     // tenta di inviare un messaggio all’utente se possibile
     if (interaction.isRepliable()) {
@@ -1039,85 +1036,56 @@ if (interaction.isCommand() && interaction.commandName === "addinventory") {
   }
 }
 
+// /removeinventory
 if (interaction.isCommand() && interaction.commandName === "removeinventory") {
   try {
     await interaction.deferReply();
 
-    // permessi admin
     if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
-      return await interaction.editReply("❌ Non hai il permesso per usare questo comando.");
+      await interaction.editReply("❌ Non hai il permesso per usare questo comando.");
+      return;
     }
 
     const user = interaction.options.getUser("to_user");
     const name = interaction.options.getString("to_name");
-    const itemRaw = interaction.options.getString("item");
+    const item = interaction.options.getString("item");
 
     const char = await Character.findOne({ userId: user.id, name });
     if (!char) {
-      return await interaction.editReply(`❌ Personaggio **${name}** non trovato per ${user.username}.`);
+      await interaction.editReply(`❌ Personaggio **${name}** non trovato per ${user.username}.`);
+      return;
     }
 
-    if (!Array.isArray(char.inventory) || char.inventory.length === 0) {
-      return await interaction.editReply(`❌ L'inventario di **${char.name}** è vuoto.`);
-    }
+    if (!Array.isArray(char.inventory)) char.inventory = [];
 
-    // normalizza input e inventory
-    const item = String(itemRaw ?? "").trim();
-    if (!item || item.toLowerCase() === "none") {
-      return await interaction.editReply("❌ Devi scegliere un item valido da rimuovere.");
-    }
-
-    // trova item ignorando case/whitespace
-    const idx = char.inventory.findIndex(i => String(i ?? "").trim().toLowerCase() === item.toLowerCase());
+    const idx = char.inventory.findIndex(i => i.toLowerCase() === item.toLowerCase());
     if (idx === -1) {
-      return await interaction.editReply(`❌ L'oggetto **${item}** non è presente nell'inventario di **${char.name}**.`);
+      await interaction.editReply(`❌ L'oggetto **${item}** non è presente nell'inventario di **${char.name}**.`);
+      return;
     }
 
     const removed = char.inventory.splice(idx, 1)[0];
-    // salva inventory normalizzando ogni entry (opzionale ma consigliato)
-    char.inventory = char.inventory.map(i => String(i).trim());
     await char.save();
 
     await interaction.editReply(`🗑️ Rimosso **${removed}** dall'inventario di **${char.name}**.`);
   } catch (err) {
     console.error("❌ Errore removeinventory:", err);
-    try {
-      if (interaction.deferred || interaction.replied) {
-        await interaction.editReply("⚠️ Errore interno, riprova più tardi.");
-      } else {
-        await interaction.reply({ content: "⚠️ Errore interno, riprova più tardi.", ephemeral: true });
-      }
-    } catch {}
-  }
-}
-      await interaction.editReply("✅ Comando eseguito!");
-  } catch (err) {
-    console.error("❌ Errore in interactionCreate:", err);
-    if (interaction.isRepliable() && !interaction.replied) {
-      await interaction.reply({ content: "Errore interno", ephemeral: true });
+    if (interaction.deferred || interaction.replied) {
+      try { await interaction.editReply("⚠️ Errore interno, riprova più tardi."); } catch {}
+    } else {
+      try { await interaction.reply({ content: "⚠️ Errore interno, riprova più tardi.", ephemeral: true }); } catch {}
     }
   }
+}
 
 
 
-
-
-
-
-
+ 
+  
   
 });
 
-  
- 
 client.login(process.env.DISCORD_TOKEN);
-
-
-
-
-
-
-
 
 
 
