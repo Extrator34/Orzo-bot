@@ -588,6 +588,7 @@ if (interaction.commandName === "list") {
       // ignoro eventuali errori secondari
     }
   }
+}
 
 
 
@@ -1125,6 +1126,7 @@ if (interaction.isCommand() && interaction.commandName === "give") {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
