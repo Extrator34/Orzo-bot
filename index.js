@@ -548,12 +548,14 @@ if (interaction.commandName === "create") {
 
 
 if (interaction.commandName === "list") {
+ try {
   await interaction.deferReply(); // <-- così non scade
 
   const chars = await Character.find({ userId: interaction.user.id });
 
   if (chars.length === 0) {
-    return await interaction.editReply("❌ Non hai ancora personaggi.");
+     await interaction.editReply("❌ Non hai ancora personaggi.");
+     return
   }
 
   const list = chars
@@ -574,7 +576,19 @@ if (interaction.commandName === "list") {
     .join("\n");
 
   await interaction.editReply(`📜 I tuoi personaggi:\n${list}`);
-}
+ } catch (err) {
+    console.error("❌ Errore in comando list:", err);
+    try {
+      if (interaction.deferred || interaction.replied) {
+        await interaction.editReply("⚠️ Errore interno, riprova più tardi.");
+      } else {
+        await interaction.reply({ content: "⚠️ Errore interno, riprova più tardi.", ephemeral: true });
+      }
+    } catch {
+      // ignoro eventuali errori secondari
+    }
+  }
+
 
 
 
@@ -1111,6 +1125,7 @@ if (interaction.isCommand() && interaction.commandName === "give") {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
