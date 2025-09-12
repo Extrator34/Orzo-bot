@@ -401,6 +401,7 @@ const commands = [
       type: 3, // STRING
       description: "Nome dell'oggetto da rimuovere",
       required: true,
+      autocomplete: true, // QUI serve autocomplete
     },
   ],
 }
@@ -443,7 +444,27 @@ client.on("interactionCreate", async (interaction) => {
       value: c.name
     }));
 
-  
+if (interaction.commandName === "removeinventory" && focused.name === "item") {
+      const toUserId = interaction.options.get("to_user")?.value;
+      const toName = interaction.options.getString("to_name");
+
+      if (!toUserId || !toName) {
+        choices = [{ name: "Seleziona prima utente/pg", value: "none" }];
+      } else {
+        const char = await Character.findOne({ userId: toUserId, name: toName });
+        if (!char || !Array.isArray(char.inventory) || char.inventory.length === 0) {
+          choices = [{ name: "Nessun oggetto", value: "none" }];
+        } else {
+          const q = (focused.value ?? "").toLowerCase();
+          choices = char.inventory
+            .filter(i => i.toLowerCase().includes(q))
+            .slice(0, 25)
+            .map(i => ({ name: i, value: i }));
+        }
+      }
+    }
+
+  }
 
   if (focused.name === "to_name") {
     const toOption = interaction.options.get("to_user");
@@ -1065,8 +1086,6 @@ if (interaction.isCommand() && interaction.commandName === "removeinventory") {
 });
 
 client.login(process.env.DISCORD_TOKEN);
-
-
 
 
 
