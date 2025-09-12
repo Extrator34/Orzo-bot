@@ -327,7 +327,7 @@ const commands = [
 
  {
   name: "addkarma",
-  description: "Modifica il karma di un personaggio (solo admin).",
+  description: "(ADMIN ONLY) Modifica il karma di un personaggio.",
   options: [
     {
       name: "to_user",
@@ -354,7 +354,7 @@ const commands = [
   // addinventory
 {
   name: "addinventory",
-  description: "Aggiungi un oggetto all'inventario di un personaggio",
+  description: "(ADMIN ONLY) Aggiungi un oggetto all'inventario di un personaggio",
   options: [
     {
       name: "to_user",
@@ -381,7 +381,7 @@ const commands = [
 // removeinventory
 {
   name: "removeinventory",
-  description: "Rimuovi un oggetto dall'inventario di un personaggio",
+  description: "(ADMIN ONLY) Rimuovi un oggetto dall'inventario di un personaggio",
   options: [
     {
       name: "to_user",
@@ -403,7 +403,41 @@ const commands = [
       required: true,
     },
   ],
-}
+},
+
+  {
+  name: "give",
+  description: "Dai un item a qualcuno",
+  options: [
+
+    {
+      name: "from_name",
+      type: 3, // STRING
+      description: "Il tuo personaggio che dà l'item",
+      required: true,
+      autocomplete: true
+    },
+    {
+      name: "to_user",
+      type: 6, // USER
+      description: "Utente proprietario del personaggio",
+      required: true,
+    },
+    {
+      name: "to_name",
+      type: 3, // STRING
+      description: "Nome del personaggio che riceve l'item",
+      required: true,
+      autocomplete: true,
+    },
+    {
+      name: "item",
+      type: 3, // STRING
+      description: "Nome dell'oggetto da dare",
+      required: true,
+    },
+  ],
+},
 
 
   
@@ -1017,6 +1051,59 @@ if (interaction.isCommand() && interaction.commandName === "removeinventory") {
 }
 
 
+// /give
+if (interaction.isCommand() && interaction.commandName === "give") {
+  try {
+    await interaction.deferReply();
+
+    const fromUser = interaction.user; // chi usa il comando
+    const fromName = interaction.options.getString("from_name");
+    const toUser = interaction.options.getUser("to_user");
+    const toName = interaction.options.getString("to_name");
+    const item = interaction.options.getString("item");
+
+    // trova il pg mittente
+    const fromChar = await Character.findOne({ userId: fromUser.id, name: fromName });
+    if (!fromChar) {
+      await interaction.editReply(`❌ Personaggio **${fromName}** non trovato nei tuoi personaggi.`);
+      return;
+    }
+
+    if (!Array.isArray(fromChar.inventory)) fromChar.inventory = [];
+
+    // trova item (case insensitive)
+    const idx = fromChar.inventory.findIndex(i => i.toLowerCase() === item.toLowerCase());
+    if (idx === -1) {
+      await interaction.editReply(`❌ Il tuo personaggio **${fromChar.name}** non possiede l'oggetto **${item}**.`);
+      return;
+    }
+
+    const removed = fromChar.inventory.splice(idx, 1)[0]; // mantiene il formato originale
+    await fromChar.save();
+
+    // trova o crea il pg destinatario
+    let toChar = await Character.findOne({ userId: toUser.id, name: toName });
+    if (!toChar) {
+      await interaction.editReply(`❌ Personaggio **${toName}** non trovato per ${toUser.username}.`);
+      return;
+    }
+    if (!Array.isArray(toChar.inventory)) toChar.inventory = [];
+
+    toChar.inventory.push(removed);
+    await toChar.save();
+
+    await interaction.editReply(
+      `🎁 **${fromChar.name}** ha dato **${removed}** a **${toChar.name}** (di ${toUser.username}).`
+    );
+  } catch (err) {
+    console.error("❌ Errore give:", err);
+    if (interaction.deferred || interaction.replied) {
+      try { await interaction.editReply("⚠️ Errore interno, riprova più tardi."); } catch {}
+    } else {
+      try { await interaction.reply({ content: "⚠️ Errore interno, riprova più tardi.", ephemeral: true }); } catch {}
+    }
+  }
+}
 
  
   
@@ -1024,6 +1111,7 @@ if (interaction.isCommand() && interaction.commandName === "removeinventory") {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
