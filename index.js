@@ -444,25 +444,6 @@ client.on("interactionCreate", async (interaction) => {
       value: c.name
     }));
 
-if (interaction.commandName === "removeinventory" && focused.name === "item") {
-      const toUserId = interaction.options.get("to_user")?.value;
-      const toName = interaction.options.getString("to_name");
-
-      if (!toUserId || !toName) {
-        choices = [{ name: "Seleziona prima utente/pg", value: "none" }];
-      } else {
-        const char = await Character.findOne({ userId: toUserId, name: toName });
-        if (!char || !Array.isArray(char.inventory) || char.inventory.length === 0) {
-          choices = [{ name: "Nessun oggetto", value: "none" }];
-        } else {
-          const q = (focused.value ?? "").toLowerCase();
-          choices = char.inventory
-            .filter(i => i.toLowerCase().includes(q))
-            .slice(0, 25)
-            .map(i => ({ name: i, value: i }));
-        }
-      }
-    }
 
   }
 
@@ -958,48 +939,6 @@ if (interaction.isChatInputCommand() && interaction.commandName === "deletepg") 
   }
 }
 
-  // --- AUTOCOMPLETE per "item" (mostra gli item del pg solo se action === "remove") ---
-if (interaction.isAutocomplete()) {
-  try {
-    const focused = interaction.options.getFocused(true);
-
-    if (interaction.commandName === "inventory" && focused.name === "item") {
-      const action = interaction.options.getString("action");
-      // suggerimenti solo quando si sta rimuovendo
-      if (action !== "remove") {
-        await interaction.respond([]);
-        return;
-      }
-
-      const toUserId = interaction.options.get("to_user")?.value;
-      const toName = interaction.options.getString("to_name");
-
-      if (!toUserId || !toName) {
-        await interaction.respond([{ name: "Seleziona prima utente/pg", value: "none" }]);
-        return;
-      }
-
-      const char = await Character.findOne({ userId: toUserId, name: toName });
-      if (!char || !Array.isArray(char.inventory) || char.inventory.length === 0) {
-        await interaction.respond([{ name: "Nessun oggetto", value: "none" }]);
-        return;
-      }
-
-      const q = String(focused.value ?? "").toLowerCase();
-      const items = char.inventory
-        .filter(it => it.toLowerCase().includes(q))
-        .slice(0, 25)
-        .map(it => ({ name: it, value: it }));
-
-      await interaction.respond(items.length ? items : [{ name: "Nessun risultato", value: "none" }]);
-    }
-  } catch (err) {
-    console.error("❌ Autocomplete inventory error:", err);
-    try { await interaction.respond([{ name: "Errore", value: "none" }]); } catch {}
-  }
-  return;
-}
-
 
 // /addinventory
 if (interaction.isCommand() && interaction.commandName === "addinventory") {
@@ -1086,6 +1025,7 @@ if (interaction.isCommand() && interaction.commandName === "removeinventory") {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
