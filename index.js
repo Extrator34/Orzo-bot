@@ -401,7 +401,6 @@ const commands = [
       type: 3, // STRING
       description: "Nome dell'oggetto da rimuovere",
       required: true,
-      autocomplete: true, // QUI serve autocomplete
     },
   ],
 }
@@ -1025,6 +1024,7 @@ if (interaction.isCommand() && interaction.commandName === "removeinventory") {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
