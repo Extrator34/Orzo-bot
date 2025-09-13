@@ -1,6 +1,6 @@
 // index.js
 import http from "http";
-import { Client, GatewayIntentBits, REST, Routes } from "discord.js";
+import { Client, GatewayIntentBits, REST, Routes, Events } from "discord.js";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 
@@ -754,5 +754,6 @@ client.on("interactionCreate", async (interaction) => {
 
 /* ======================= LOGIN ======================= */
 client.login(process.env.DISCORD_TOKEN);
+
 
 
