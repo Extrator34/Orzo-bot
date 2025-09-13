@@ -231,9 +231,11 @@ try {
 }
 
 /* ======================= EVENTI ======================= */
-client.once(Events.ClientReady, () => { 
+client.once(Events.ClientReady, () => {
   console.log(`🤖 Loggato come ${client.user.tag}`);
 });
+
+
 
 client.on("interactionCreate", async (interaction) => {
   try {
@@ -752,4 +754,5 @@ client.on("interactionCreate", async (interaction) => {
 
 /* ======================= LOGIN ======================= */
 client.login(process.env.DISCORD_TOKEN);
+
 
