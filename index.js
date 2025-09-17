@@ -376,8 +376,8 @@ if (interaction.isAutocomplete()) {
 
       return `- ${c.name}
   Livello: ${livello}
-  Soldi: ${c.money}💰
   Exp: ${expMostrata} / ${nextDelta}
+  Soldi: ${c.money}💰
   
   -----------------------------`;
     })
@@ -1084,6 +1084,7 @@ if (interaction.commandName === "removeadvantage") {
 
 /* ======================= LOGIN ======================= */
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
