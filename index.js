@@ -803,16 +803,29 @@ if (interaction.commandName === "show") {
   const name = interaction.options.getString("from_name");
 
   if (!name || name === "none") {
-    await interaction.editReply("❌ Devi selezionare un personaggio valido.");
+    await interaction.editReply({
+      embeds: [{
+        title: "❌ Errore",
+        description: "Devi selezionare un personaggio valido.",
+        color: 0xff0000
+      }]
+    });
     return;
   }
 
   const char = await Character.findOne({ userId: targetUser.id, name });
   if (!char) {
-    await interaction.editReply(`❌ Personaggio **${name}** non trovato per ${targetUser.username}.`);
+    await interaction.editReply({
+      embeds: [{
+        title: "❌ Personaggio non trovato",
+        description: `**${name}** non trovato per ${targetUser.username}.`,
+        color: 0xff0000
+      }]
+    });
     return;
   }
 
+  // Calcolo livello ed exp
   const entry = [...expTable].reverse().find(([expReq]) => char.expTotale >= expReq);
   const livello = entry ? entry[1] : 1;
   const expBase = entry ? entry[0] : 0;
@@ -820,21 +833,52 @@ if (interaction.commandName === "show") {
   const expMostrata = char.expTotale - expBase;
   const nextDelta = Math.max(0, nextExp - expBase);
 
-  const imgLine = char.image ? `Immagine: ${char.image}` : "Immagine: (non impostata)";
+  // Barra exp (10 blocchi)
+  const progress = Math.min(1, expMostrata / nextDelta);
+  const filledBlocks = Math.round(progress * 10);
+  const emptyBlocks = 10 - filledBlocks;
+  const expBar = "🟩".repeat(filledBlocks) + "⬜".repeat(emptyBlocks);
 
-  const text =
-    `📄 ${char.name} (di ${targetUser.username})\n` +
-    `- Livello: ${livello}\n` +
-    `- Soldi: ${char.money}💰\n` +
-    `- Exp: ${expMostrata} / ${nextDelta}\n` +
-    `- Karma: ${char.karma}\n` +
-    `- HP Max: ${char.hpMax} | HP/Level: ${char.hpPerLevel}\n` +
-    `- Inventario: ${char.inventory?.length ? char.inventory.join(", ") : "vuoto"}\n` +
-    `${imgLine}`;
+  // Colore embed in base al karma
+  let color;
+  if (char.karma >= -9 && char.karma <= 9) color = 0x808080;       // grigio
+  else if (char.karma >= -19 && char.karma <= -10) color = 0xff0000; // rosso
+  else if (char.karma >= -30 && char.karma <= -20) color = 0x000000; // nero
+  else if (char.karma >= 10 && char.karma <= 19) color = 0x00ffff;   // azzurro
+  else if (char.karma >= 20 && char.karma <= 30) color = 0xffffff;   // bianco
+  else color = 0x808080; // fallback
 
-  await interaction.editReply(text);
+  // Inventario e vantaggi
+  const inventarioText = char.inventory?.length
+    ? char.inventory.join(", ")
+    : "Vuoto";
+
+  const vantaggiText = char.vantaggi?.length
+    ? char.vantaggi.map(v => `${v.nome} (${v.modificatore})`).join(", ")
+    : "Nessuno";
+
+  // Embed finale
+  const embed = {
+    title: `📄 ${char.name}`,
+    color,
+    fields: [
+      { name: "❤️ HP Max", value: `${char.hpMax}`, inline: true },
+      { name: "📈 Livello", value: `${livello}`, inline: true },
+      { name: "⭐ Exp", value: `${expMostrata} / ${nextDelta}`, inline: true },
+      { name: "📊 Avanzamento", value: expBar, inline: false },
+      { name: "☯️ Karma", value: `${char.karma}`, inline: true },
+      { name: "💰 Soldi", value: `${char.money}💰`, inline: true },
+      { name: "🎒 Inventario", value: inventarioText, inline: false },
+      { name: "🎯 Vantaggi", value: vantaggiText, inline: false }
+    ],
+    image: { url: char.image || null },
+    footer: { text: `Creato da ${targetUser.username}` }
+  };
+
+  await interaction.editReply({ embeds: [embed] });
   return;
 }
+
 
 
     /* ---------- ADDINVENTORY ---------- */
@@ -1084,6 +1128,7 @@ if (interaction.commandName === "removeadvantage") {
 
 /* ======================= LOGIN ======================= */
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
