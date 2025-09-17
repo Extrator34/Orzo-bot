@@ -251,10 +251,18 @@ client.on("interactionCreate", async (interaction) => {
       const focused = interaction.options.getFocused(true);
       let choices = [];
 
-      if (focused.name === "from_name") {
-        const chars = await Character.find({ userId: interaction.user.id });
-        choices = chars.map(c => ({ name: `${c.name}`, value: c.name }));
-      }
+     if (focused.name === "from_name") {
+  // Recupera l'utente selezionato nell'opzione "user"
+  const selectedUser = interaction.options.getUser("user");
+  if (!selectedUser) {
+    choices = [{ name: "Seleziona prima l'utente", value: "none" }];
+  } else {
+    const chars = await Character.find({ userId: selectedUser.id });
+    choices = chars.length
+      ? chars.map(c => ({ name: c.name, value: c.name }))
+      : [{ name: "Nessun personaggio trovato", value: "none" }];
+  }
+}
 
       if (focused.name === "to_name") {
         const toOption = interaction.options.get("to_user");
@@ -786,6 +794,7 @@ if (interaction.commandName === "show") {
 
 /* ======================= LOGIN ======================= */
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
