@@ -100,14 +100,21 @@ const commands = [
       { name: "image", type: 11, description: "Immagine del personaggio", required: true },
     ],
   },
-  {
-    name: "show",
-    description: "Mostra il tuo personaggio",
-    options: [
-      { name: "from_name", type: 3, description: "Nome del personaggio", required: true, autocomplete: true },
-    ],
-  },
-  { name: "list", description: "Mostra la lista dei tuoi personaggi" },
+ {
+  name: "show",
+  description: "Mostra un personaggio",
+  options: [
+    { name: "from_name", type: 3, description: "Nome del personaggio", required: true, autocomplete: true },
+    { name: "user", type: 6, description: "Utente proprietario del personaggio", required: false }
+  ]
+},
+{
+  name: "list",
+  description: "Mostra la lista dei personaggi",
+  options: [
+    { name: "user", type: 6, description: "Utente di cui vedere i personaggi", required: false }
+  ]
+},
   {
     name: "modifymoney",
     description: "(ADMIN ONLY) Aggiungi o rimuovi soldi ad un personaggio",
@@ -301,34 +308,46 @@ client.on("interactionCreate", async (interaction) => {
     }
 
     /* ---------- LIST ---------- */
-    if (interaction.commandName === "list") {
-      await interaction.deferReply();
-      const chars = await Character.find({ userId: interaction.user.id });
-      if (chars.length === 0) {
-        await interaction.editReply("❌ Non hai ancora personaggi.");
-        return;
-      }
+   if (interaction.commandName === "list") {
+  await interaction.deferReply();
 
-      const list = chars
-        .map((c) => {
-          const entry = [...expTable].reverse().find(([expReq]) => c.expTotale >= expReq);
-          const livello = entry ? entry[1] : 1;
-          const expBase = entry ? entry[0] : 0;
-          const nextExp = expTable.find(([_, lvl]) => lvl === livello + 1)?.[0] ?? expBase;
-          const expMostrata = c.expTotale - expBase;
-          const nextDelta = Math.max(0, nextExp - expBase);
+  const targetUser = interaction.options.getUser("user") || interaction.user;
 
-          return `- ${c.name}
+  const chars = await Character.find({ userId: targetUser.id });
+  if (chars.length === 0) {
+    await interaction.editReply(
+      targetUser.id === interaction.user.id
+        ? "❌ Non hai ancora personaggi."
+        : `❌ L'utente ${targetUser.username} non ha personaggi.`
+    );
+    return;
+  }
+
+  const list = chars
+    .map((c) => {
+      const entry = [...expTable].reverse().find(([expReq]) => c.expTotale >= expReq);
+      const livello = entry ? entry[1] : 1;
+      const expBase = entry ? entry[0] : 0;
+      const nextExp = expTable.find(([_, lvl]) => lvl === livello + 1)?.[0] ?? expBase;
+      const expMostrata = c.expTotale - expBase;
+      const nextDelta = Math.max(0, nextExp - expBase);
+
+      return `- ${c.name}
   Livello: ${livello}
   Soldi: ${c.money}💰
   Exp: ${expMostrata} / ${nextDelta}
   -----------------------------`;
-        })
-        .join("\n");
+    })
+    .join("\n");
 
-      await interaction.editReply(`📜 I tuoi personaggi:\n${list}`);
-      return;
-    }
+  await interaction.editReply(
+    targetUser.id === interaction.user.id
+      ? `📜 I tuoi personaggi:\n${list}`
+      : `📜 Personaggi di ${targetUser.username}:\n${list}`
+  );
+  return;
+}
+
 
     /* ---------- MODIFYMONEY ---------- */
     if (interaction.commandName === "modifymoney") {
@@ -612,33 +631,42 @@ client.on("interactionCreate", async (interaction) => {
     }
 
     /* ---------- SHOW ---------- */
-    if (interaction.commandName === "show") {
-      await interaction.deferReply();
+   if (interaction.commandName === "show") {
+  await interaction.deferReply();
 
-      const name = interaction.options.getString("from_name");
-      const char = await Character.findOne({ userId: interaction.user.id, name });
-      if (!char) {
-        await interaction.editReply(`❌ Personaggio **${name}** non trovato.`);
-        return;
-      }
+  const name = interaction.options.getString("from_name");
+  const targetUser = interaction.options.getUser("user") || interaction.user;
 
-      if (!char.image) {
-        await interaction.editReply(`ℹ️ Il personaggio **${char.name}** non ha ancora un'immagine.`);
-        return;
-      }
+  const char = await Character.findOne({ userId: targetUser.id, name });
+  if (!char) {
+    await interaction.editReply(
+      targetUser.id === interaction.user.id
+        ? `❌ Personaggio **${name}** non trovato.`
+        : `❌ Personaggio **${name}** non trovato per ${targetUser.username}.`
+    );
+    return;
+  }
 
-      await interaction.editReply({
-        embeds: [
-          {
-            title: char.name,
-            description: `Creato da <@${interaction.user.id}>`,
-            image: { url: char.image },
-            color: 0x0099ff,
-          },
-        ],
-      });
-      return;
-    }
+  if (!char.image) {
+    await interaction.editReply(
+      `ℹ️ Il personaggio **${char.name}** non ha ancora un'immagine.`
+    );
+    return;
+  }
+
+  await interaction.editReply({
+    embeds: [
+      {
+        title: char.name,
+        description: `Creato da <@${targetUser.id}>`,
+        image: { url: char.image },
+        color: 0x0099ff,
+      },
+    ],
+  });
+  return;
+}
+
 
     /* ---------- ADDINVENTORY ---------- */
     if (interaction.commandName === "addinventory") {
@@ -754,6 +782,7 @@ client.on("interactionCreate", async (interaction) => {
 
 /* ======================= LOGIN ======================= */
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
