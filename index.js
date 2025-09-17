@@ -854,7 +854,8 @@ if (interaction.commandName === "show") {
 
       const char = await Character.findOne({ userId: user.id, name });
       if (!char) {
-         title: "❌ Personaggio non trovato",
+        await interaction.editReply(createEmbed({
+      title: "❌ Personaggio non trovato",
       description: `**${name}** non trovato per ${user.username}.`,
       color: 0xff0000
     }));
@@ -1081,6 +1082,7 @@ if (interaction.commandName === "removeadvantage") {
 
 /* ======================= LOGIN ======================= */
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
