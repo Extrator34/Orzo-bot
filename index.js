@@ -246,40 +246,42 @@ client.once(Events.ClientReady, () => {
 
 client.on("interactionCreate", async (interaction) => {
   try {
-    /* ---------- Autocomplete ---------- */
-    if (interaction.isAutocomplete()) {
-      const focused = interaction.options.getFocused(true);
-      let choices = [];
+  /* ---------- Autocomplete ---------- */
+if (interaction.isAutocomplete()) {
+  const focused = interaction.options.getFocused(true);
+  let choices = [];
 
-     if (focused.name === "from_name") {
-  // Recupera l'utente selezionato nell'opzione "user"
-  const selectedUser = interaction.options.getUser("user");
-  if (!selectedUser) {
-    choices = [{ name: "Seleziona prima l'utente", value: "none" }];
-  } else {
-    const chars = await Character.find({ userId: selectedUser.id });
-    choices = chars.length
-      ? chars.map(c => ({ name: c.name, value: c.name }))
-      : [{ name: "Nessun personaggio trovato", value: "none" }];
+  // Helper: recupera l'userId target (selezionato in opzione "user") oppure il chiamante
+  const targetUserId =
+    interaction.options.get("user")?.value // ID dell'utente selezionato (anche se non risolto)
+    || interaction.user.id;                // fallback: l'utente che esegue
+
+  if (focused.name === "from_name") {
+    const query = (focused.value || "").toLowerCase();
+    const chars = await Character.find({ userId: targetUserId }).limit(100);
+    choices = chars
+      .filter(c => c.name.toLowerCase().includes(query))
+      .map(c => ({ name: c.name, value: c.name }));
   }
+
+  if (focused.name === "to_name") {
+    // Per to_name continuiamo a leggere l'utente dalla relativa opzione "to_user"
+    const toUserId = interaction.options.get("to_user")?.value;
+    const baseUserId = toUserId || interaction.user.id;
+    const query = (focused.value || "").toLowerCase();
+    const chars = await Character.find({ userId: baseUserId }).limit(100);
+    choices = chars
+      .filter(c => c.name.toLowerCase().includes(query))
+      .map(c => ({ name: c.name, value: c.name }));
+  }
+
+  // Risposta (max 25 elementi) o "Nessun risultato" se vuota
+  await interaction.respond(
+    choices.length ? choices.slice(0, 25) : [{ name: "Nessun risultato", value: "none" }]
+  );
+  return;
 }
 
-      if (focused.name === "to_name") {
-        const toOption = interaction.options.get("to_user");
-        const toUserId = toOption?.value;
-        if (!toUserId) {
-          choices = [{ name: "Seleziona prima l'utente", value: "none" }];
-        } else {
-          const chars = await Character.find({ userId: toUserId });
-          choices = chars.length
-            ? chars.map(c => ({ name: `${c.name}`, value: c.name }))
-            : [{ name: "Nessun personaggio trovato", value: "none" }];
-        }
-      }
-
-      await interaction.respond(choices.slice(0, 25).length ? choices.slice(0, 25) : [{ name: "Nessun risultato", value: "none" }]);
-      return;
-    }
 
     if (!interaction.isChatInputCommand()) return;
 
@@ -794,6 +796,7 @@ if (interaction.commandName === "show") {
 
 /* ======================= LOGIN ======================= */
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
