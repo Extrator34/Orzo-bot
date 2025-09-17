@@ -850,13 +850,13 @@ if (interaction.commandName === "show") {
 
   // Inventario e vantaggi
   const inventarioText = char.inventory?.length
-    ? char.inventory.join(", ")
+    ? char.inventory.join("\n ")
     : "Vuoto";
 
   const vantaggiText = char.vantaggi?.length
     ? char.vantaggi
         .map(v => `${v.nome} (${v.modificatore >= 0 ? `+${v.modificatore}` : v.modificatore})`)
-        .join(", ")
+        .join("\n ")
     : "Nessuno";
 
   // Embed finale
@@ -1130,6 +1130,7 @@ if (interaction.commandName === "removeadvantage") {
 
 /* ======================= LOGIN ======================= */
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
