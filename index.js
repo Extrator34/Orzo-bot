@@ -109,8 +109,8 @@ const commands = [
   },
   { name: "list", description: "Mostra la lista dei tuoi personaggi" },
   {
-    name: "addmoney",
-    description: "(ADMIN ONLY) Aggiungi soldi a un personaggio",
+    name: "modifymoney",
+    description: "(ADMIN ONLY) Aggiungi o rimuovi soldi ad un personaggio",
     options: [
       { name: "to_user", type: 6, description: "Utente proprietario del personaggio", required: true },
       { name: "to_name", type: 3, description: "Nome del personaggio", required: true, autocomplete: true },
@@ -330,8 +330,8 @@ client.on("interactionCreate", async (interaction) => {
       return;
     }
 
-    /* ---------- ADDMONEY ---------- */
-    if (interaction.commandName === "addmoney") {
+    /* ---------- MODIFYMONEY ---------- */
+    if (interaction.commandName === "modifymoney") {
       await interaction.deferReply();
       if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
         await interaction.editReply("❌ Non hai il permesso per usare questo comando.");
@@ -754,6 +754,7 @@ client.on("interactionCreate", async (interaction) => {
 
 /* ======================= LOGIN ======================= */
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
