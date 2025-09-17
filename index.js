@@ -6,6 +6,11 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+/* ======================= FUNZIONE EMBED ======================= */
+function createEmbed({ title, description, color = 0x0099ff }) {
+  return { embeds: [{ title, description, color }] };
+}
+
 /* ======================= WEB SERVER KEEP-ALIVE (Render) ======================= */
 const PORT = process.env.PORT || 10000;
 const server = http.createServer((req, res) => {
@@ -312,7 +317,11 @@ if (interaction.isAutocomplete()) {
       const image = interaction.options.getAttachment("image");
 
       if (!image || !image.contentType?.startsWith("image/")) {
-        await interaction.editReply("❌ Devi caricare un file immagine valido (jpg, png, ecc).");
+        await interaction.editReply(createEmbed({
+          title: "❌ Errore",
+          description: "Devi caricare un file immagine valido (jpg, png, ecc).",
+          color: 0xff0000
+            }));
         return;
       }
 
@@ -877,6 +886,7 @@ if (interaction.commandName === "removeadvantage") {
 
 /* ======================= LOGIN ======================= */
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
