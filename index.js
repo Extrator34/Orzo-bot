@@ -100,13 +100,13 @@ const commands = [
       { name: "image", type: 11, description: "Immagine del personaggio", required: true },
     ],
   },
- {
+{
   name: "show",
   description: "Mostra un personaggio",
   options: [
-    { name: "from_name", type: 3, description: "Nome del personaggio", required: true, autocomplete: true },
-    { name: "user", type: 6, description: "Utente proprietario del personaggio", required: false }
-  ]
+    { name: "user", type: 6, description: "Utente proprietario del personaggio", required: false },
+    { name: "from_name", type: 3, description: "Nome del personaggio", required: true, autocomplete: true }
+  ],
 },
 {
   name: "list",
@@ -631,11 +631,16 @@ client.on("interactionCreate", async (interaction) => {
     }
 
     /* ---------- SHOW ---------- */
-   if (interaction.commandName === "show") {
+if (interaction.commandName === "show") {
   await interaction.deferReply();
 
-  const name = interaction.options.getString("from_name");
   const targetUser = interaction.options.getUser("user") || interaction.user;
+  const name = interaction.options.getString("from_name");
+
+  if (!name || name === "none") {
+    await interaction.editReply("❌ Devi selezionare un personaggio valido.");
+    return;
+  }
 
   const char = await Character.findOne({ userId: targetUser.id, name });
   if (!char) {
@@ -647,26 +652,30 @@ client.on("interactionCreate", async (interaction) => {
     return;
   }
 
-  if (!char.image) {
-    await interaction.editReply(
-      `ℹ️ Il personaggio **${char.name}** non ha ancora un'immagine.`
-    );
-    return;
-  }
+  // Calcolo livello/exp come nel list
+  const entry = [...expTable].reverse().find(([expReq]) => char.expTotale >= expReq);
+  const livello = entry ? entry[1] : 1;
+  const expBase = entry ? entry[0] : 0;
+  const nextExp = expTable.find(([_, lvl]) => lvl === livello + 1)?.[0] ?? expBase;
+  const expMostrata = char.expTotale - expBase;
+  const nextDelta = Math.max(0, nextExp - expBase);
 
-  await interaction.editReply({
-    embeds: [
-      {
-        title: char.name,
-        description: `Creato da <@${targetUser.id}>`,
-        image: { url: char.image },
-        color: 0x0099ff,
-      },
-    ],
-  });
+  const ownerTag = targetUser.id === interaction.user.id ? "tuo" : `di ${targetUser.username}`;
+  const imgLine = char.image ? `Immagine: ${char.image}` : "Immagine: (non impostata)";
+
+  const text =
+    `📄 ${char.name} (${ownerTag})\n` +
+    `- Livello: ${livello}\n` +
+    `- Soldi: ${char.money}💰\n` +
+    `- Exp: ${expMostrata} / ${nextDelta}\n` +
+    `- Karma: ${char.karma}\n` +
+    `- HP Max: ${char.hpMax} | HP/Level: ${char.hpPerLevel}\n` +
+    `- Inventario: ${char.inventory?.length ? char.inventory.join(", ") : "vuoto"}\n` +
+    `${imgLine}`;
+
+  await interaction.editReply(text);
   return;
 }
-
 
     /* ---------- ADDINVENTORY ---------- */
     if (interaction.commandName === "addinventory") {
@@ -782,6 +791,7 @@ client.on("interactionCreate", async (interaction) => {
 
 /* ======================= LOGIN ======================= */
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
