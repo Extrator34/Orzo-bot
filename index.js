@@ -353,13 +353,16 @@ if (interaction.isAutocomplete()) {
   const targetUser = interaction.options.getUser("user") || interaction.user;
 
   const chars = await Character.find({ userId: targetUser.id });
-  if (chars.length === 0) {
-    await interaction.editReply(
-      targetUser.id === interaction.user.id
-        ? "❌ Non hai ancora personaggi."
-        : `❌ L'utente ${targetUser.username} non ha personaggi.`
-    );
-    return;
+ 
+      if (!chars.length) {
+        await interaction.editReply(createEmbed({
+          title: "❌ Nessun personaggio",
+          description: targetUser.id === interaction.user.id
+            ? "Non hai ancora personaggi."
+            : `L'utente ${targetUser.username} non ha personaggi.`,
+          color: 0xff0000
+        }));
+        return;
   }
 
   const list = chars
@@ -379,12 +382,14 @@ if (interaction.isAutocomplete()) {
     })
     .join("\n");
 
-  await interaction.editReply(
-    targetUser.id === interaction.user.id
-      ? `📜 I tuoi personaggi:\n${list}`
-      : `📜 Personaggi di ${targetUser.username}:\n${list}`
-  );
-  return;
+ await interaction.editReply(createEmbed({
+        title: targetUser.id === interaction.user.id
+          ? "📜 I tuoi personaggi"
+          : `📜 Personaggi di ${targetUser.username}`,
+        description: list,
+        color: 0x0099ff
+      }));
+      return;
 }
 
 
@@ -392,8 +397,12 @@ if (interaction.isAutocomplete()) {
     if (interaction.commandName === "modifymoney") {
       await interaction.deferReply();
       if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
-        await interaction.editReply("❌ Non hai il permesso per usare questo comando.");
-        return;
+        await interaction.editReply(createEmbed({
+      title: "⛔ Permesso negato",
+      description: "Non hai il permesso per usare questo comando.",
+      color: 0xff0000
+    }));
+    return;
       }
       const user = interaction.options.getUser("to_user");
       const name = interaction.options.getString("to_name");
@@ -401,15 +410,23 @@ if (interaction.isAutocomplete()) {
 
       const character = await Character.findOne({ userId: user.id, name });
       if (!character) {
-        await interaction.editReply(`❌ Personaggio **${name}** non trovato per ${user.username}.`);
-        return;
+        await interaction.editReply(createEmbed({
+      title: "❌ Personaggio non trovato",
+      description: `**${name}** non trovato per ${user.username}.`,
+      color: 0xff0000
+    }));
+    return;
       }
 
       character.money += amount;
       await character.save();
 
-      await interaction.editReply(`💰 Aggiunti **${amount}** soldi al personaggio **${character.name}** di ${user.username}. Totale: ${character.money}💰`);
-      return;
+      await interaction.editReply(createEmbed({
+    title: "💰 Modifica denaro",
+    description: `Aggiunti **${amount}** soldi a **${character.name}** di ${user.username}.\nTotale: ${character.money}💰`,
+    color: 0x00ff99
+  }));
+  return;
     }
 
     /* ---------- PAY ---------- */
@@ -421,25 +438,41 @@ if (interaction.isAutocomplete()) {
       const amount = interaction.options.getInteger("amount");
 
       if (amount <= 0) {
-        await interaction.editReply("❌ L'importo deve essere un numero positivo maggiore di zero.");
-        return;
+        await interaction.editReply(createEmbed({
+      title: "❌ Importo non valido",
+      description: "L'importo deve essere un numero positivo maggiore di zero.",
+      color: 0xff0000
+    }));
+    return;
       }
 
       const fromChar = await Character.findOne({ userId: interaction.user.id, name: fromName });
       if (!fromChar) {
-        await interaction.editReply(`❌ Non hai nessun personaggio chiamato **${fromName}**.`);
-        return;
+        await interaction.editReply(createEmbed({
+      title: "❌ Personaggio non trovato",
+      description: `Non hai nessun personaggio chiamato **${fromName}**.`,
+      color: 0xff0000
+    }));
+    return;
       }
 
       if (fromChar.money < amount) {
-        await interaction.editReply(`❌ Il personaggio **${fromChar.name}** non ha abbastanza soldi (ha ${fromChar.money}💰).`);
-        return;
+       await interaction.editReply(createEmbed({
+      title: "❌ Fondi insufficienti",
+      description: `**${fromChar.name}** non ha abbastanza soldi (ha ${fromChar.money}💰).`,
+      color: 0xff0000
+    }));
+    return;
       }
 
       const toChar = await Character.findOne({ userId: toUser.id, name: toName });
       if (!toChar) {
-        await interaction.editReply(`❌ Il personaggio **${toName}** non è stato trovato per ${toUser.username}.`);
-        return;
+        await interaction.editReply(createEmbed({
+      title: "❌ Personaggio non trovato",
+      description: `**${toName}** non è stato trovato per ${toUser.username}.`,
+      color: 0xff0000
+    }));
+    return;
       }
 
       fromChar.money -= amount;
@@ -447,8 +480,15 @@ if (interaction.isAutocomplete()) {
       await fromChar.save();
       await toChar.save();
 
-      await interaction.editReply(`✅ **${fromChar.name}** ha pagato **${amount}💰** a **${toChar.name}** (${toUser.username}).\nSaldo aggiornato: ${fromChar.name} → ${fromChar.money}💰 | ${toChar.name} → ${toChar.money}💰`);
-      return;
+      await interaction.editReply(createEmbed({
+    title: "✅ Pagamento effettuato",
+    description: `**${fromChar.name}** ha pagato **${amount}💰** a **${toChar.name}** (${toUser.username}).\n` +
+                 `Saldo aggiornato:\n` +
+                 `• ${fromChar.name} → ${fromChar.money}💰\n` +
+                 `• ${toChar.name} → ${toChar.money}💰`,
+    color: 0x00ff99
+  }));
+  return;
     }
 
     /* ---------- RENAME ---------- */
@@ -459,37 +499,57 @@ if (interaction.isAutocomplete()) {
 
       const char = await Character.findOne({ userId: interaction.user.id, name: fromName });
       if (!char) {
-        await interaction.editReply(`❌ Non hai nessun personaggio chiamato **${fromName}**.`);
-        return;
+        await interaction.editReply(createEmbed({
+      title: "❌ Personaggio non trovato",
+      description: `Non hai nessun personaggio chiamato **${fromName}**.`,
+      color: 0xff0000
+    }));
+    return;
       }
 
       char.name = newName;
       await char.save();
 
-      await interaction.editReply(`✏️ Il tuo personaggio **${fromName}** è stato rinominato in **${newName}** ✅`);
-      return;
+       await interaction.editReply(createEmbed({
+    title: "✏️ Rinomina completata",
+    description: `Il tuo personaggio **${fromName}** è stato rinominato in **${newName}**.`,
+    color: 0x00ff99
+  }));
+  return;
     }
 
     /* ---------- ADDEXP ---------- */
     if (interaction.commandName === "addexp") {
       await interaction.deferReply();
       if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
-        await interaction.editReply("❌ Non hai il permesso per usare questo comando.");
-        return;
+        await interaction.editReply(createEmbed({
+      title: "⛔ Permesso negato",
+      description: "Non hai il permesso per usare questo comando.",
+      color: 0xff0000
+    }));
+    return;
       }
       const user = interaction.options.getUser("to_user");
       const name = interaction.options.getString("to_name");
       const amount = interaction.options.getInteger("amount");
 
       if (amount <= 0) {
-        await interaction.editReply("❌ L'esperienza deve essere un numero positivo maggiore di zero.");
-        return;
+       await interaction.editReply(createEmbed({
+      title: "❌ Valore non valido",
+      description: "L'esperienza deve essere un numero positivo maggiore di zero.",
+      color: 0xff0000
+    }));
+    return;
       }
 
       const char = await Character.findOne({ userId: user.id, name });
       if (!char) {
-        await interaction.editReply(`❌ Personaggio **${name}** non trovato per ${user.username}.`);
-        return;
+        await interaction.editReply(createEmbed({
+      title: "❌ Personaggio non trovato",
+      description: `**${name}** non trovato per ${user.username}.`,
+      color: 0xff0000
+    }));
+    return;
       }
 
       char.expTotale += amount;
@@ -515,22 +575,33 @@ if (interaction.isAutocomplete()) {
       await char.save();
 
       if (newLevel > oldLevel) {
-        await interaction.editReply(
-          `🎉 Congratulazioni! **${char.name}** è salito al livello **${newLevel}**!\n` +
-          `Exp attuale: ${char.expMostrata} / prossimo livello`
-        );
+         await interaction.editReply(createEmbed({
+      title: "🎉 Livello aumentato!",
+      description: `**${char.name}** è salito al livello **${newLevel}**!\n` +
+                   `Exp attuale: ${char.expMostrata} / prossimo livello`,
+      color: 0x00ff99
+    }));
       } else {
-        await interaction.editReply(`✅ Aggiunti **${amount} exp** a **${char.name}**.\nLivello attuale: ${char.level} | Exp: ${char.expMostrata}`);
-      }
-      return;
+        await interaction.editReply(createEmbed({
+      title: "✅ Esperienza aggiunta",
+      description: `Aggiunti **${amount} exp** a **${char.name}**.\n` +
+                   `Livello attuale: ${char.level} | Exp: ${char.expMostrata}`,
+      color: 0x00ff99
+    }));
+  }
+  return;
     }
 
     /* ---------- REMOVEEXP ---------- */
     if (interaction.commandName === "removeexp") {
       await interaction.deferReply();
       if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
-        await interaction.editReply("❌ Non hai il permesso per usare questo comando.");
-        return;
+       await interaction.editReply(createEmbed({
+      title: "⛔ Permesso negato",
+      description: "Non hai il permesso per usare questo comando.",
+      color: 0xff0000
+    }));
+    return;
       }
 
       const user = interaction.options.getUser("to_user");
@@ -538,14 +609,22 @@ if (interaction.isAutocomplete()) {
       const amount = interaction.options.getInteger("amount");
 
       if (amount <= 0) {
-        await interaction.editReply("❌ Devi inserire un numero positivo di exp da rimuovere.");
-        return;
+        await interaction.editReply(createEmbed({
+      title: "❌ Valore non valido",
+      description: "Devi inserire un numero positivo di exp da rimuovere.",
+      color: 0xff0000
+    }));
+    return;
       }
 
       const character = await Character.findOne({ userId: user.id, name });
       if (!character) {
-        await interaction.editReply(`❌ Personaggio **${name}** non trovato per ${user.username}.`);
-        return;
+        await interaction.editReply(createEmbed({
+      title: "❌ Personaggio non trovato",
+      description: `**${name}** non trovato per ${user.username}.`,
+      color: 0xff0000
+    }));
+    return;
       }
 
       character.expTotale = Math.max(0, character.expTotale - amount);
@@ -567,20 +646,26 @@ if (interaction.isAutocomplete()) {
 
       await character.save();
 
-      await interaction.editReply(
-        `📉 Rimossi **${amount} exp** da **${character.name}** di ${user.username}.\n` +
-        `Livello attuale: ${livello}\n` +
-        `Exp: ${expMostrata} / ${nextExp - expBase}`
-      );
-      return;
+    await interaction.editReply(createEmbed({
+    title: "📉 Exp rimossa",
+    description: `Rimossi **${amount} exp** da **${character.name}** di ${user.username}.\n` +
+                 `Livello attuale: ${livello}\n` +
+                 `Exp: ${expMostrata} / ${nextExp - expBase}`,
+    color: 0x00ff99
+  }));
+  return;
     }
 
     /* ---------- SETHPMAX ---------- */
     if (interaction.commandName === "sethpmax") {
       await interaction.deferReply();
       if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
-        await interaction.editReply("❌ Non hai il permesso per usare questo comando.");
-        return;
+        await interaction.editReply(createEmbed({
+      title: "⛔ Permesso negato",
+      description: "Non hai il permesso per usare questo comando.",
+      color: 0xff0000
+    }));
+    return;
       }
 
       const user = interaction.options.getUser("to_user");
@@ -589,23 +674,35 @@ if (interaction.isAutocomplete()) {
 
       const char = await Character.findOne({ userId: user.id, name });
       if (!char) {
-        await interaction.editReply(`❌ Personaggio **${name}** non trovato per ${user.username}.`);
-        return;
+        await interaction.editReply(createEmbed({
+      title: "❌ Personaggio non trovato",
+      description: `**${name}** non trovato per ${user.username}.`,
+      color: 0xff0000
+    }));
+    return;
       }
 
       char.hpMax = amount;
       await char.save();
 
-      await interaction.editReply(`✅ HP massimi di **${char.name}** aggiornati a **${amount}**.`);
-      return;
+      await interaction.editReply(createEmbed({
+    title: "❤️ HP massimi aggiornati",
+    description: `HP massimi di **${char.name}** aggiornati a **${amount}**.`,
+    color: 0x00ff99
+  }));
+  return;
     }
 
     /* ---------- SETHPPERLEVEL ---------- */
     if (interaction.commandName === "sethpperlevel") {
       await interaction.deferReply();
       if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
-        await interaction.editReply("❌ Non hai il permesso per usare questo comando.");
-        return;
+        await interaction.editReply(createEmbed({
+      title: "⛔ Permesso negato",
+      description: "Non hai il permesso per usare questo comando.",
+      color: 0xff0000
+    }));
+    return;
       }
 
       const user = interaction.options.getUser("to_user");
@@ -614,15 +711,23 @@ if (interaction.isAutocomplete()) {
 
       const char = await Character.findOne({ userId: user.id, name });
       if (!char) {
-        await interaction.editReply(`❌ Personaggio **${name}** non trovato per ${user.username}.`);
-        return;
+        await interaction.editReply(createEmbed({
+      title: "❌ Personaggio non trovato",
+      description: `**${name}** non trovato per ${user.username}.`,
+      color: 0xff0000
+    }));
+    return;
       }
 
       char.hpPerLevel = amount;
       await char.save();
 
-      await interaction.editReply(`✅ HP per livello di **${char.name}** aggiornati a **${amount}**.`);
-      return;
+     await interaction.editReply(createEmbed({
+    title: "❤️ HP per livello aggiornati",
+    description: `HP per livello di **${char.name}** aggiornati a **${amount}**.`,
+    color: 0x00ff99
+  }));
+  return;
     }
 
     /* ---------- DELETEPG ---------- */
@@ -632,21 +737,33 @@ if (interaction.isAutocomplete()) {
       const fromName = interaction.options.getString("from_name");
       const char = await Character.findOne({ userId: interaction.user.id, name: fromName });
       if (!char) {
-        await interaction.editReply(`❌ Non hai nessun personaggio chiamato **${fromName}**.`);
-        return;
+        await interaction.editReply(createEmbed({
+      title: "❌ Personaggio non trovato",
+      description: `Non hai nessun personaggio chiamato **${fromName}**.`,
+      color: 0xff0000
+    }));
+    return;
       }
 
       await Character.deleteOne({ _id: char._id });
-      await interaction.editReply(`🗑️ Il personaggio **${char.name}** è stato eliminato con successo.`);
-      return;
+      await interaction.editReply(createEmbed({
+    title: "🗑️ Personaggio eliminato",
+    description: `Il personaggio **${char.name}** è stato eliminato con successo.`,
+    color: 0x00ff99
+  }));
+  return;
     }
 
     /* ---------- ADDKARMA ---------- */
     if (interaction.commandName === "addkarma") {
       await interaction.deferReply();
       if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
-        await interaction.editReply("❌ Non hai il permesso per usare questo comando.");
-        return;
+        await interaction.editReply(createEmbed({
+      title: "⛔ Permesso negato",
+      description: "Non hai il permesso per usare questo comando.",
+      color: 0xff0000
+    }));
+    return;
       }
 
       const user = interaction.options.getUser("to_user");
@@ -655,8 +772,12 @@ if (interaction.isAutocomplete()) {
 
       const char = await Character.findOne({ userId: user.id, name });
       if (!char) {
-        await interaction.editReply(`❌ Personaggio **${name}** non trovato per ${user.username}.`);
-        return;
+       await interaction.editReply(createEmbed({
+      title: "❌ Personaggio non trovato",
+      description: `**${name}** non trovato per ${user.username}.`,
+      color: 0xff0000
+    }));
+    return;
       }
 
       char.karma += amount;
@@ -665,8 +786,12 @@ if (interaction.isAutocomplete()) {
 
       await char.save();
 
-      await interaction.editReply(`☯️ Karma di **${char.name}** modificato di **${amount}**.\nValore attuale: **${char.karma}** (range valido: -30 → +30).`);
-      return;
+      await interaction.editReply(createEmbed({
+    title: "☯️ Karma modificato",
+    description: `Karma di **${char.name}** modificato di **${amount}**.\nValore attuale: **${char.karma}** (range valido: -30 → +30).`,
+    color: 0x00ff99
+  }));
+  return;
     }
 
     /* ---------- SHOW ---------- */
@@ -715,8 +840,12 @@ if (interaction.commandName === "show") {
     if (interaction.commandName === "addinventory") {
       await interaction.deferReply();
       if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
-        await interaction.editReply("❌ Non hai il permesso per usare questo comando.");
-        return;
+        await interaction.editReply(createEmbed({
+      title: "⛔ Permesso negato",
+      description: "Non hai il permesso per usare questo comando.",
+      color: 0xff0000
+    }));
+    return;
       }
 
       const user = interaction.options.getUser("to_user");
@@ -725,24 +854,35 @@ if (interaction.commandName === "show") {
 
       const char = await Character.findOne({ userId: user.id, name });
       if (!char) {
-        await interaction.editReply(`❌ Personaggio **${name}** non trovato per ${user.username}.`);
-        return;
+         title: "❌ Personaggio non trovato",
+      description: `**${name}** non trovato per ${user.username}.`,
+      color: 0xff0000
+    }));
+    return;
       }
 
       if (!Array.isArray(char.inventory)) char.inventory = [];
       char.inventory.push(item);
       await char.save();
 
-      await interaction.editReply(`✅ Aggiunto **${item}** all'inventario di **${char.name}**.`);
-      return;
+      await interaction.editReply(createEmbed({
+    title: "✅ Oggetto aggiunto",
+    description: `Aggiunto **${item}** all'inventario di **${char.name}**.`,
+    color: 0x00ff99
+  }));
+  return;
     }
 
     /* ---------- REMOVEINVENTORY ---------- */
     if (interaction.commandName === "removeinventory") {
       await interaction.deferReply();
       if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
-        await interaction.editReply("❌ Non hai il permesso per usare questo comando.");
-        return;
+        await interaction.editReply(createEmbed({
+      title: "⛔ Permesso negato",
+      description: "Non hai il permesso per usare questo comando.",
+      color: 0xff0000
+    }));
+    return;
       }
 
       const user = interaction.options.getUser("to_user");
@@ -751,30 +891,46 @@ if (interaction.commandName === "show") {
 
       const char = await Character.findOne({ userId: user.id, name });
       if (!char) {
-        await interaction.editReply(`❌ Personaggio **${name}** non trovato per ${user.username}.`);
-        return;
+      await interaction.editReply(createEmbed({
+      title: "❌ Personaggio non trovato",
+      description: `**${name}** non trovato per ${user.username}.`,
+      color: 0xff0000
+    }));
+    return;
       }
 
       if (!Array.isArray(char.inventory)) char.inventory = [];
 
       const idx = char.inventory.findIndex(i => i.toLowerCase() === item.toLowerCase());
       if (idx === -1) {
-        await interaction.editReply(`❌ L'oggetto **${item}** non è presente nell'inventario di **${char.name}**.`);
-        return;
+        await interaction.editReply(createEmbed({
+      title: "❌ Oggetto non trovato",
+      description: `L'oggetto **${item}** non è presente nell'inventario di **${char.name}**.`,
+      color: 0xff0000
+    }));
+    return;
       }
 
       const removed = char.inventory.splice(idx, 1)[0];
       await char.save();
 
-      await interaction.editReply(`🗑️ Rimosso **${removed}** dall'inventario di **${char.name}**.`);
-      return;
+      await interaction.editReply(createEmbed({
+    title: "🗑️ Oggetto rimosso",
+    description: `Rimosso **${removed}** dall'inventario di **${char.name}**.`,
+    color: 0x00ff99
+  }));
+  return;
     }
 
 /* ---------- ADVANTAGE ---------- */
 if (interaction.commandName === "advantage") {
   await interaction.deferReply();
   if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
-    await interaction.editReply("❌ Non hai il permesso per usare questo comando.");
+   await interaction.editReply(createEmbed({
+      title: "⛔ Permesso negato",
+      description: "Non hai il permesso per usare questo comando.",
+      color: 0xff0000
+    }));
     return;
   }
 
@@ -785,7 +941,11 @@ if (interaction.commandName === "advantage") {
 
   const char = await Character.findOne({ userId: user.id, name });
   if (!char) {
-    await interaction.editReply(`❌ Personaggio **${name}** non trovato per ${user.username}.`);
+  await interaction.editReply(createEmbed({
+      title: "❌ Personaggio non trovato",
+      description: `**${name}** non trovato per ${user.username}.`,
+      color: 0xff0000
+    }));
     return;
   }
 
@@ -793,7 +953,11 @@ if (interaction.commandName === "advantage") {
   char.vantaggi.push({ nome: vantaggioNome, modificatore });
   await char.save();
 
-  await interaction.editReply(`✅ Aggiunto vantaggio **${vantaggioNome}** (modificatore: ${modificatore}) a **${char.name}**.`);
+  await interaction.editReply(createEmbed({
+    title: "✅ Vantaggio aggiunto",
+    description: `Aggiunto vantaggio **${vantaggioNome}** (modificatore: ${modificatore}) a **${char.name}**.`,
+    color: 0x00ff99
+  }));
   return;
 }
 
@@ -801,7 +965,11 @@ if (interaction.commandName === "advantage") {
 if (interaction.commandName === "removeadvantage") {
   await interaction.deferReply();
   if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
-    await interaction.editReply("❌ Non hai il permesso per usare questo comando.");
+   await interaction.editReply(createEmbed({
+      title: "⛔ Permesso negato",
+      description: "Non hai il permesso per usare questo comando.",
+      color: 0xff0000
+    }));
     return;
   }
 
@@ -811,7 +979,11 @@ if (interaction.commandName === "removeadvantage") {
 
   const char = await Character.findOne({ userId: user.id, name });
   if (!char) {
-    await interaction.editReply(`❌ Personaggio **${name}** non trovato per ${user.username}.`);
+   await interaction.editReply(createEmbed({
+      title: "❌ Personaggio non trovato",
+      description: `**${name}** non trovato per ${user.username}.`,
+      color: 0xff0000
+    }));
     return;
   }
 
@@ -819,14 +991,22 @@ if (interaction.commandName === "removeadvantage") {
 
   const idx = char.vantaggi.findIndex(v => v.nome.toLowerCase() === vantaggioNome.toLowerCase());
   if (idx === -1) {
-    await interaction.editReply(`❌ Il vantaggio **${vantaggioNome}** non è presente in **${char.name}**.`);
+   await interaction.editReply(createEmbed({
+      title: "❌ Vantaggio non trovato",
+      description: `Il vantaggio **${vantaggioNome}** non è presente in **${char.name}**.`,
+      color: 0xff0000
+    }));
     return;
   }
 
   const removed = char.vantaggi.splice(idx, 1)[0];
   await char.save();
 
-  await interaction.editReply(`🗑️ Rimosso vantaggio **${removed.nome}** (modificatore: ${removed.modificatore}) da **${char.name}**.`);
+  await interaction.editReply(createEmbed({
+    title: "🗑️ Vantaggio rimosso",
+    description: `Rimosso vantaggio **${removed.nome}** (modificatore: ${removed.modificatore}) da **${char.name}**.`,
+    color: 0x00ff99
+  }));
   return;
 }
 
@@ -843,16 +1023,23 @@ if (interaction.commandName === "removeadvantage") {
 
       const fromChar = await Character.findOne({ userId: fromUser.id, name: fromName });
       if (!fromChar) {
-        await interaction.editReply(`❌ Personaggio **${fromName}** non trovato nei tuoi personaggi.`);
-        return;
+         await interaction.editReply(createEmbed({
+      title: "❌ Personaggio non trovato",
+      description: `**${fromName}** non trovato nei tuoi personaggi.`,
+      color: 0xff0000
+    }));
+    return;
       }
 
       if (!Array.isArray(fromChar.inventory)) fromChar.inventory = [];
 
       const idx = fromChar.inventory.findIndex(i => i.toLowerCase() === item.toLowerCase());
       if (idx === -1) {
-        await interaction.editReply(`❌ Il tuo personaggio **${fromChar.name}** non possiede l'oggetto **${item}**.`);
-        return;
+          title: "❌ Oggetto non trovato",
+      description: `Il tuo personaggio **${fromChar.name}** non possiede l'oggetto **${item}**.`,
+      color: 0xff0000
+    }));
+    return;
       }
 
       const removed = fromChar.inventory.splice(idx, 1)[0];
@@ -860,16 +1047,24 @@ if (interaction.commandName === "removeadvantage") {
 
       const toChar = await Character.findOne({ userId: toUser.id, name: toName });
       if (!toChar) {
-        await interaction.editReply(`❌ Personaggio **${toName}** non trovato per ${toUser.username}.`);
-        return;
+        await interaction.editReply(createEmbed({
+      title: "❌ Personaggio non trovato",
+      description: `**${toName}** non trovato per ${toUser.username}.`,
+      color: 0xff0000
+    }));
+    return;
       }
 
       if (!Array.isArray(toChar.inventory)) toChar.inventory = [];
       toChar.inventory.push(removed);
       await toChar.save();
 
-      await interaction.editReply(`🎁 **${fromChar.name}** ha dato **${removed}** a **${toChar.name}** (di ${toUser.username}).`);
-      return;
+    await interaction.editReply(createEmbed({
+    title: "🎁 Oggetto trasferito",
+    description: `**${fromChar.name}** ha dato **${removed}** a **${toChar.name}** (di ${toUser.username}).`,
+    color: 0x00ff99
+  }));
+  return;
     }
 
   } catch (err) {
@@ -886,6 +1081,7 @@ if (interaction.commandName === "removeadvantage") {
 
 /* ======================= LOGIN ======================= */
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
