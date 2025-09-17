@@ -637,13 +637,17 @@ if (interaction.commandName === "show") {
   const targetUser = interaction.options.getUser("user");
   const name = interaction.options.getString("from_name");
 
+  if (!name || name === "none") {
+    await interaction.editReply("❌ Devi selezionare un personaggio valido.");
+    return;
+  }
+
   const char = await Character.findOne({ userId: targetUser.id, name });
   if (!char) {
     await interaction.editReply(`❌ Personaggio **${name}** non trovato per ${targetUser.username}.`);
     return;
   }
 
-  // Calcolo livello/exp come prima
   const entry = [...expTable].reverse().find(([expReq]) => char.expTotale >= expReq);
   const livello = entry ? entry[1] : 1;
   const expBase = entry ? entry[0] : 0;
@@ -667,31 +671,6 @@ if (interaction.commandName === "show") {
   return;
 }
 
-
-  // Calcolo livello/exp come nel list
-  const entry = [...expTable].reverse().find(([expReq]) => char.expTotale >= expReq);
-  const livello = entry ? entry[1] : 1;
-  const expBase = entry ? entry[0] : 0;
-  const nextExp = expTable.find(([_, lvl]) => lvl === livello + 1)?.[0] ?? expBase;
-  const expMostrata = char.expTotale - expBase;
-  const nextDelta = Math.max(0, nextExp - expBase);
-
-  const ownerTag = targetUser.id === interaction.user.id ? "tuo" : `di ${targetUser.username}`;
-  const imgLine = char.image ? `Immagine: ${char.image}` : "Immagine: (non impostata)";
-
-  const text =
-    `📄 ${char.name} (${ownerTag})\n` +
-    `- Livello: ${livello}\n` +
-    `- Soldi: ${char.money}💰\n` +
-    `- Exp: ${expMostrata} / ${nextDelta}\n` +
-    `- Karma: ${char.karma}\n` +
-    `- HP Max: ${char.hpMax} | HP/Level: ${char.hpPerLevel}\n` +
-    `- Inventario: ${char.inventory?.length ? char.inventory.join(", ") : "vuoto"}\n` +
-    `${imgLine}`;
-
-  await interaction.editReply(text);
-  return;
-}
 
     /* ---------- ADDINVENTORY ---------- */
     if (interaction.commandName === "addinventory") {
@@ -807,6 +786,7 @@ if (interaction.commandName === "show") {
 
 /* ======================= LOGIN ======================= */
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
