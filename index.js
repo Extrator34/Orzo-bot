@@ -883,30 +883,6 @@ if (interaction.commandName === "show") {
 
 
 
-  // Embed finale
-  const embed = {
-    title: `📄 ${char.name}`,
-    color,
-    fields: [
-      { name: "❤️ HP Max", value: `${char.hpMax}`, inline: true },
-      { name: "📈 Livello", value: `${livello}`, inline: true },
-      { name: "⭐ Exp", value: `${expMostrata} / ${nextDelta}`, inline: true },
-      { name: "📊 Avanzamento", value: expBar, inline: false },
-      { name: "☯️ Karma", value: `${char.karma}`, inline: true },
-      { name: "💰 Soldi", value: `${char.money}💰`, inline: true },
-      { name: "🎒 Inventario", value: inventarioText, inline: false },
-      { name: "🎯 Vantaggi", value: vantaggiText, inline: false }
-    ],
-    image: { url: char.image || null },
-    footer: { text: `Creato da ${targetUser.username}` }
-  };
-
-  await interaction.editReply({ embeds: [embed] });
-  return;
-}
-
-
-
     /* ---------- ADDINVENTORY ---------- */
     if (interaction.commandName === "addinventory") {
       await interaction.deferReply();
@@ -1154,6 +1130,7 @@ if (interaction.commandName === "removeadvantage") {
 
 /* ======================= LOGIN ======================= */
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
