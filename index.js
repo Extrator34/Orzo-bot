@@ -864,14 +864,14 @@ if (interaction.commandName === "show") {
     title: `📄 ${char.name}`,
     color,
     fields: [
-      { name: "❤️ HP Max", value: `${char.hpMax}`, inline: true },
-      { name: "📈 Livello", value: `${livello}`, inline: true },
-      { name: "⭐ Exp", value: `${expMostrata} / ${nextDelta}`, inline: true },
-      { name: "📊 Avanzamento", value: expBar, inline: false },
-      { name: "☯️ Karma", value: `${char.karma}`, inline: true },
-      { name: "💰 Soldi", value: `${char.money}💰`, inline: true },
-      { name: "🎒 Inventario", value: inventarioText, inline: false },
-      { name: "🎯 Vantaggi", value: vantaggiText, inline: false }
+      { name: "❤️ HP Max", value: `${char.hpMax}\n`, inline: true },
+      { name: "📈 Livello", value: `${livello}\n`, inline: true },
+      { name: "⭐ Exp", value: `${expMostrata} / ${nextDelta}\n`, inline: true },
+      { name: "📊 Avanzamento", value: `${expBar}\n`, inline: false },
+      { name: "☯️ Karma", value: `${char.karma}\n`, inline: true },
+      { name: "💰 Soldi", value: `${char.money}💰\n`, inline: true },
+      { name: "🎒 Inventario", value: `${inventarioText}\n`, inline: false },
+      { name: "🎯 Vantaggi", value: `${vantaggiText}\n`, inline: false }
     ],
     image: { url: char.image || null },
     footer: { text: `Creato da ${targetUser.username}` }
@@ -1130,6 +1130,7 @@ if (interaction.commandName === "removeadvantage") {
 
 /* ======================= LOGIN ======================= */
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
