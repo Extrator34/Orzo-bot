@@ -51,6 +51,7 @@ const characterSchema = new mongoose.Schema({
   expMostrata: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now },
   inventory: { type: [String], default: [] },
+  vantaggi: { type: [{ nome: String, modificatore: Number }], default: [] }
 });
 const Character = mongoose.model("Character", characterSchema);
 
@@ -222,6 +223,25 @@ const commands = [
       { name: "item", type: 3, description: "Nome dell'oggetto da dare", required: true },
     ],
   },
+  {
+  name: "advantage",
+  description: "(ADMIN ONLY) Aggiungi un vantaggio a un personaggio",
+  options: [
+    { name: "to_user", type: 6, description: "Utente proprietario del personaggio", required: true },
+    { name: "to_name", type: 3, description: "Nome del personaggio", required: true, autocomplete: true },
+    { name: "nome", type: 3, description: "Nome del vantaggio", required: true },
+    { name: "modificatore", type: 4, description: "Modificatore per i dadi", required: true }
+  ]
+},
+{
+  name: "removeadvantage",
+  description: "(ADMIN ONLY) Rimuovi un vantaggio da un personaggio",
+  options: [
+    { name: "to_user", type: 6, description: "Utente proprietario del personaggio", required: true },
+    { name: "to_name", type: 3, description: "Nome del personaggio", required: true, autocomplete: true },
+    { name: "nome", type: 3, description: "Nome del vantaggio da rimuovere", required: true }
+  ]
+},
 ];
 
 /* ======================= REGISTRAZIONE COMANDI ======================= */
@@ -741,6 +761,67 @@ if (interaction.commandName === "show") {
       return;
     }
 
+/* ---------- ADVANTAGE ---------- */
+if (interaction.commandName === "advantage") {
+  await interaction.deferReply();
+  if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
+    await interaction.editReply("❌ Non hai il permesso per usare questo comando.");
+    return;
+  }
+
+  const user = interaction.options.getUser("to_user");
+  const name = interaction.options.getString("to_name");
+  const vantaggioNome = interaction.options.getString("nome");
+  const modificatore = interaction.options.getInteger("modificatore");
+
+  const char = await Character.findOne({ userId: user.id, name });
+  if (!char) {
+    await interaction.editReply(`❌ Personaggio **${name}** non trovato per ${user.username}.`);
+    return;
+  }
+
+  if (!Array.isArray(char.vantaggi)) char.vantaggi = [];
+  char.vantaggi.push({ nome: vantaggioNome, modificatore });
+  await char.save();
+
+  await interaction.editReply(`✅ Aggiunto vantaggio **${vantaggioNome}** (modificatore: ${modificatore}) a **${char.name}**.`);
+  return;
+}
+
+/* ---------- REMOVEADVANTAGE ---------- */
+if (interaction.commandName === "removeadvantage") {
+  await interaction.deferReply();
+  if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
+    await interaction.editReply("❌ Non hai il permesso per usare questo comando.");
+    return;
+  }
+
+  const user = interaction.options.getUser("to_user");
+  const name = interaction.options.getString("to_name");
+  const vantaggioNome = interaction.options.getString("nome");
+
+  const char = await Character.findOne({ userId: user.id, name });
+  if (!char) {
+    await interaction.editReply(`❌ Personaggio **${name}** non trovato per ${user.username}.`);
+    return;
+  }
+
+  if (!Array.isArray(char.vantaggi)) char.vantaggi = [];
+
+  const idx = char.vantaggi.findIndex(v => v.nome.toLowerCase() === vantaggioNome.toLowerCase());
+  if (idx === -1) {
+    await interaction.editReply(`❌ Il vantaggio **${vantaggioNome}** non è presente in **${char.name}**.`);
+    return;
+  }
+
+  const removed = char.vantaggi.splice(idx, 1)[0];
+  await char.save();
+
+  await interaction.editReply(`🗑️ Rimosso vantaggio **${removed.nome}** (modificatore: ${removed.modificatore}) da **${char.name}**.`);
+  return;
+}
+
+
     /* ---------- GIVE ---------- */
     if (interaction.commandName === "give") {
       await interaction.deferReply();
@@ -796,6 +877,7 @@ if (interaction.commandName === "show") {
 
 /* ======================= LOGIN ======================= */
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
