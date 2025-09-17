@@ -1036,7 +1036,8 @@ if (interaction.commandName === "removeadvantage") {
 
       const idx = fromChar.inventory.findIndex(i => i.toLowerCase() === item.toLowerCase());
       if (idx === -1) {
-          title: "❌ Oggetto non trovato",
+         await interaction.editReply(createEmbed({
+      title: "❌ Oggetto non trovato",
       description: `Il tuo personaggio **${fromChar.name}** non possiede l'oggetto **${item}**.`,
       color: 0xff0000
     }));
@@ -1082,6 +1083,7 @@ if (interaction.commandName === "removeadvantage") {
 
 /* ======================= LOGIN ======================= */
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
