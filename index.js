@@ -797,7 +797,7 @@ if (interaction.isAutocomplete()) {
 
     /* ---------- SHOW ---------- */
 if (interaction.commandName === "show") {
-  await interaction.deferReply();
+  await interaction.deferReply(); // subito, così l'interaction non scade
 
   const targetUser = interaction.options.getUser("user");
   const name = interaction.options.getString("from_name");
@@ -834,7 +834,7 @@ if (interaction.commandName === "show") {
   const nextDelta = Math.max(0, nextExp - expBase);
 
   // Barra exp (10 blocchi)
-  const progress = Math.min(1, expMostrata / nextDelta);
+  const progress = nextDelta > 0 ? Math.min(1, expMostrata / nextDelta) : 1;
   const filledBlocks = Math.round(progress * 10);
   const emptyBlocks = 10 - filledBlocks;
   const expBar = "🟩".repeat(filledBlocks) + "⬜".repeat(emptyBlocks);
@@ -852,15 +852,35 @@ if (interaction.commandName === "show") {
   const inventarioText = char.inventory?.length
     ? char.inventory.join(", ")
     : "Vuoto";
-  
-const vantaggiText = char.vantaggi?.length
-  ? char.vantaggi
-      .map(v => {
-        const mod = v.modificatore >= 0 ? `+${v.modificatore}` : `${v.modificatore}`;
-        return `${v.nome} (${mod})`;
-      })
-      .join(", ")
-  : "Nessuno";
+
+  const vantaggiText = char.vantaggi?.length
+    ? char.vantaggi
+        .map(v => `${v.nome} (${v.modificatore >= 0 ? `+${v.modificatore}` : v.modificatore})`)
+        .join(", ")
+    : "Nessuno";
+
+  // Embed finale
+  const embed = {
+    title: `📄 ${char.name}`,
+    color,
+    fields: [
+      { name: "❤️ HP Max", value: `${char.hpMax}`, inline: true },
+      { name: "📈 Livello", value: `${livello}`, inline: true },
+      { name: "⭐ Exp", value: `${expMostrata} / ${nextDelta}`, inline: true },
+      { name: "📊 Avanzamento", value: expBar, inline: false },
+      { name: "☯️ Karma", value: `${char.karma}`, inline: true },
+      { name: "💰 Soldi", value: `${char.money}💰`, inline: true },
+      { name: "🎒 Inventario", value: inventarioText, inline: false },
+      { name: "🎯 Vantaggi", value: vantaggiText, inline: false }
+    ],
+    image: { url: char.image || null },
+    footer: { text: `Creato da ${targetUser.username}` }
+  };
+
+  await interaction.editReply({ embeds: [embed] });
+  return;
+}
+
 
 
   // Embed finale
@@ -1134,6 +1154,7 @@ if (interaction.commandName === "removeadvantage") {
 
 /* ======================= LOGIN ======================= */
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
