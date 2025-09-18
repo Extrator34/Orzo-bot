@@ -870,8 +870,8 @@ if (interaction.commandName === "show") {
       { name: "📊 Avanzamento", value: `${expBar}\n`, inline: false },
       { name: "☯️ Karma", value: `${char.karma}\n`, inline: true },
       { name: "💰 Soldi", value: `${char.money}💰\n`, inline: true },
-      { name: "🎒 Inventario", value: `${inventarioText}\n`, inline: false },
-      { name: "🎯 Vantaggi", value: `${vantaggiText}\n`, inline: false }
+      { name: "🎒 Inventario", value: `${inventarioText}`, inline: false },
+      { name: "🎯 Vantaggi", value: `${vantaggiText}`, inline: false }
     ],
     image: { url: char.image || null },
     footer: { text: `Creato da ${targetUser.username}` }
@@ -1130,6 +1130,7 @@ if (interaction.commandName === "removeadvantage") {
 
 /* ======================= LOGIN ======================= */
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
