@@ -327,7 +327,7 @@ if (interaction.commandName === "create") {
   }
 
   // ID del canale dove caricare l'immagine (es. #galleria-pg)
-  const mediaChannelId = "ID_DEL_TUO_CANALE_MEDIA"; // ← sostituisci con l'ID reale
+  const mediaChannelId = "778383958135930924"; // ← sostituisci con l'ID reale
   const mediaChannel = client.channels.cache.get(mediaChannelId);
 
   if (!mediaChannel || !mediaChannel.isTextBased()) {
@@ -1170,6 +1170,7 @@ if (interaction.commandName === "removeadvantage") {
 
 /* ======================= LOGIN ======================= */
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
