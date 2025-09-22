@@ -1105,7 +1105,7 @@ if (interaction.commandName === "removeadvantage") {
 
     /* ---------- HELP ---------- */
 if (interaction.commandName === "help") {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply();
 
   const isAdmin = interaction.member.roles.cache.has(ADMIN_ROLE_ID);
 
@@ -1226,6 +1226,7 @@ if (interaction.commandName === "help") {
 
 /* ======================= LOGIN ======================= */
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
