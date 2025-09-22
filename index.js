@@ -241,7 +241,7 @@ const commands = [
   {
   name: "help",
   description: "Mostra la lista dei comandi disponibili"
-}
+},
 
 {
   name: "removeadvantage",
@@ -1226,6 +1226,7 @@ if (interaction.commandName === "help") {
 
 /* ======================= LOGIN ======================= */
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
