@@ -94,7 +94,7 @@ const client = new Client({
 });
 
 /* ======================= PERMESSI ADMIN ======================= */
-const ADMIN_ROLE_ID = "783454797445464076";
+const ADMIN_ROLE_ID = "1272491698538414120";
 
 /* ======================= COMANDI SLASH ======================= */
 const commands = [
@@ -327,7 +327,7 @@ if (interaction.commandName === "create") {
   }
 
   // ID del canale dove caricare l'immagine (es. #galleria-pg)
-  const mediaChannelId = "778383958135930924"; // ← sostituisci con l'ID reale
+  const mediaChannelId = "1272793692301819926"; // ← sostituisci con l'ID reale
   const mediaChannel = client.channels.cache.get(mediaChannelId);
 
   if (!mediaChannel || !mediaChannel.isTextBased()) {
@@ -1170,6 +1170,7 @@ if (interaction.commandName === "removeadvantage") {
 
 /* ======================= LOGIN ======================= */
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
