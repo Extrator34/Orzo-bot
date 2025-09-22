@@ -238,6 +238,11 @@ const commands = [
     { name: "modificatore", type: 4, description: "Modificatore per i dadi", required: true }
   ]
 },
+  {
+  name: "help",
+  description: "Mostra la lista dei comandi disponibili"
+}
+
 {
   name: "removeadvantage",
   description: "(ADMIN ONLY) Rimuovi un vantaggio da un personaggio",
@@ -1098,6 +1103,57 @@ if (interaction.commandName === "removeadvantage") {
   return;
 }
 
+    /* ---------- HELP ---------- */
+if (interaction.commandName === "help") {
+  await interaction.deferReply({ ephemeral: true });
+
+  const isAdmin = interaction.member.roles.cache.has(ADMIN_ROLE_ID);
+
+  const userCommands = [
+    "`/create` – Crea un nuovo personaggio",
+    "`/show` – Mostra la scheda di un personaggio",
+    "`/list` – Mostra la lista dei personaggi",
+    "`/rename` – Rinomina un tuo personaggio",
+    "`/deletepg` – Elimina uno dei tuoi personaggi",
+    "`/pay` – Paga un altro personaggio",
+    "`/give` – Dai un oggetto a un altro personaggio"
+  ];
+
+  const adminCommands = [
+    "`/modifymoney` – Aggiungi o rimuovi soldi",
+    "`/addexp` – Aggiungi exp",
+    "`/removeexp` – Rimuovi exp",
+    "`/sethpmax` – Modifica HP massimi",
+    "`/sethpperlevel` – Modifica HP per livello",
+    "`/addkarma` – Modifica karma",
+    "`/addinventory` – Aggiungi oggetto",
+    "`/removeinventory` – Rimuovi oggetto",
+    "`/advantage` – Aggiungi vantaggio",
+    "`/removeadvantage` – Rimuovi vantaggio"
+  ];
+
+  const embed = {
+    title: "📘 Comandi disponibili",
+    color: isAdmin ? 0x00ff99 : 0x0099ff,
+    fields: [
+      {
+        name: "🧍‍♂️ Comandi utente",
+        value: userCommands.join("\n"),
+        inline: false
+      },
+      ...(isAdmin ? [{
+        name: "🔒 Comandi admin",
+        value: adminCommands.join("\n"),
+        inline: false
+      }] : [])
+    ],
+    footer: { text: isAdmin ? "Hai accesso completo ai comandi." : "Non hai il ruolo admin, quindi vedi solo i comandi base." }
+  };
+
+  await interaction.editReply({ embeds: [embed] });
+  return;
+}
+
 
     /* ---------- GIVE ---------- */
     if (interaction.commandName === "give") {
@@ -1170,6 +1226,7 @@ if (interaction.commandName === "removeadvantage") {
 
 /* ======================= LOGIN ======================= */
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
