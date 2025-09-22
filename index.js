@@ -1139,12 +1139,12 @@ if (interaction.commandName === "help") {
       {
         name: "🧍‍♂️ Comandi utente",
         value: userCommands.join("\n"),
-        inline: true
+        inline: false
       },
       ...(isAdmin ? [{
         name: "🔒 Comandi admin",
         value: adminCommands.join("\n"),
-        inline: true
+        inline: false
       }] : [])
     ],
     footer: { text: isAdmin ? "Hai accesso completo ai comandi." : "Non hai il ruolo admin, quindi vedi solo i comandi base." }
@@ -1226,6 +1226,7 @@ if (interaction.commandName === "help") {
 
 /* ======================= LOGIN ======================= */
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
