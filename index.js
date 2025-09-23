@@ -55,7 +55,10 @@ const characterSchema = new mongoose.Schema({
   expTotale: { type: Number, default: 0 },
   expMostrata: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now },
-  inventory: { type: [String], default: [] },
+ inventory: {
+  type: [{ nome: String, quantita: Number }],
+  default: []
+},
   vantaggi: { type: [{ nome: String, modificatore: Number }], default: [] }
 });
 const Character = mongoose.model("Character", characterSchema);
@@ -201,33 +204,36 @@ const commands = [
     ],
   },
   {
-    name: "addinventory",
-    description: "(ADMIN ONLY) Aggiungi un oggetto all'inventario di un personaggio",
-    options: [
-      { name: "to_user", type: 6, description: "Utente proprietario del personaggio", required: true },
-      { name: "to_name", type: 3, description: "Nome del personaggio", required: true, autocomplete: true },
-      { name: "item", type: 3, description: "Nome dell'oggetto da aggiungere", required: true },
-    ],
-  },
-  {
-    name: "removeinventory",
-    description: "(ADMIN ONLY) Rimuovi un oggetto dall'inventario di un personaggio",
-    options: [
-      { name: "to_user", type: 6, description: "Utente proprietario del personaggio", required: true },
-      { name: "to_name", type: 3, description: "Nome del personaggio", required: true, autocomplete: true },
-      { name: "item", type: 3, description: "Nome dell'oggetto da rimuovere", required: true },
-    ],
-  },
-  {
-    name: "give",
-    description: "Dai un item a qualcuno",
-    options: [
-      { name: "from_name", type: 3, description: "Il tuo personaggio che dà l'item", required: true, autocomplete: true },
-      { name: "to_user", type: 6, description: "Utente proprietario del personaggio", required: true },
-      { name: "to_name", type: 3, description: "Nome del personaggio che riceve l'item", required: true, autocomplete: true },
-      { name: "item", type: 3, description: "Nome dell'oggetto da dare", required: true },
-    ],
-  },
+  name: "addinventory",
+  description: "(ADMIN ONLY) Aggiungi un oggetto all'inventario di un personaggio",
+  options: [
+    { name: "to_user", type: 6, required: true, description: "Utente proprietario del personaggio" },
+    { name: "to_name", type: 3, required: true, description: "Nome del personaggio", autocomplete: true },
+    { name: "item", type: 3, required: true, description: "Nome dell'oggetto da aggiungere" },
+    { name: "quantita", type: 4, required: true, description: "Quantità da aggiungere" }
+  ]
+},
+ {
+  name: "removeinventory",
+  description: "(ADMIN ONLY) Rimuovi un oggetto dall'inventario di un personaggio",
+  options: [
+    { name: "to_user", type: 6, required: true, description: "Utente proprietario del personaggio" },
+    { name: "to_name", type: 3, required: true, description: "Nome del personaggio", autocomplete: true },
+    { name: "item", type: 3, required: true, description: "Nome dell'oggetto da rimuovere" },
+    { name: "quantita", type: 4, required: true, description: "Quantità da rimuovere" }
+  ]
+},
+ {
+  name: "give",
+  description: "Dai un item a qualcuno",
+  options: [
+    { name: "from_name", type: 3, required: true, description: "Il tuo personaggio che dà l'item", autocomplete: true },
+    { name: "to_user", type: 6, required: true, description: "Utente proprietario del personaggio" },
+    { name: "to_name", type: 3, required: true, description: "Nome del personaggio che riceve l'item", autocomplete: true },
+    { name: "item", type: 3, required: true, description: "Nome dell'oggetto da dare" },
+    { name: "quantita", type: 4, required: true, description: "Quantità da dare" }
+  ]
+}
   {
   name: "advantage",
   description: "(ADMIN ONLY) Aggiungi un vantaggio a un personaggio",
@@ -929,91 +935,105 @@ if (interaction.commandName === "show") {
 
 
     /* ---------- ADDINVENTORY ---------- */
-    if (interaction.commandName === "addinventory") {
-      await interaction.deferReply();
-      if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
-        await interaction.editReply(createEmbed({
+  if (interaction.commandName === "addinventory") {
+  await interaction.deferReply();
+  if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
+    await interaction.editReply(createEmbed({
       title: "⛔ Permesso negato",
       description: "Non hai il permesso per usare questo comando.",
       color: 0xff0000
     }));
     return;
-      }
+  }
 
-      const user = interaction.options.getUser("to_user");
-      const name = interaction.options.getString("to_name");
-      const item = interaction.options.getString("item");
+  const user = interaction.options.getUser("to_user");
+  const name = interaction.options.getString("to_name");
+  const item = interaction.options.getString("item");
+  const quantita = interaction.options.getInteger("quantita");
 
-      const char = await Character.findOne({ userId: user.id, name });
-      if (!char) {
-        await interaction.editReply(createEmbed({
+  const char = await Character.findOne({ userId: user.id, name });
+  if (!char) {
+    await interaction.editReply(createEmbed({
       title: "❌ Personaggio non trovato",
       description: `**${name}** non trovato per ${user.username}.`,
       color: 0xff0000
     }));
     return;
-      }
+  }
 
-      if (!Array.isArray(char.inventory)) char.inventory = [];
-      char.inventory.push(item);
-      await char.save();
+  if (!Array.isArray(char.inventory)) char.inventory = [];
 
-      await interaction.editReply(createEmbed({
+  const existing = char.inventory.find(i => i.nome.toLowerCase() === item.toLowerCase());
+  if (existing) {
+    existing.quantita += quantita;
+  } else {
+    char.inventory.push({ nome: item, quantita });
+  }
+
+  await char.save();
+
+  await interaction.editReply(createEmbed({
     title: "✅ Oggetto aggiunto",
-    description: `Aggiunto **${item}** all'inventario di **${char.name}**.`,
+    description: `Aggiunto **${quantita}x ${item}** all'inventario di **${char.name}**.`,
     color: 0x00ff99
   }));
   return;
-    }
+}
+
 
     /* ---------- REMOVEINVENTORY ---------- */
     if (interaction.commandName === "removeinventory") {
-      await interaction.deferReply();
-      if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
-        await interaction.editReply(createEmbed({
+  await interaction.deferReply();
+  if (!interaction.member.roles.cache.has(ADMIN_ROLE_ID)) {
+    await interaction.editReply(createEmbed({
       title: "⛔ Permesso negato",
       description: "Non hai il permesso per usare questo comando.",
       color: 0xff0000
     }));
     return;
-      }
+  }
 
-      const user = interaction.options.getUser("to_user");
-      const name = interaction.options.getString("to_name");
-      const item = interaction.options.getString("item");
+  const user = interaction.options.getUser("to_user");
+  const name = interaction.options.getString("to_name");
+  const item = interaction.options.getString("item");
+  const quantita = interaction.options.getInteger("quantita");
 
-      const char = await Character.findOne({ userId: user.id, name });
-      if (!char) {
-      await interaction.editReply(createEmbed({
+  const char = await Character.findOne({ userId: user.id, name });
+  if (!char) {
+    await interaction.editReply(createEmbed({
       title: "❌ Personaggio non trovato",
       description: `**${name}** non trovato per ${user.username}.`,
       color: 0xff0000
     }));
     return;
-      }
+  }
 
-      if (!Array.isArray(char.inventory)) char.inventory = [];
+  if (!Array.isArray(char.inventory)) char.inventory = [];
 
-      const idx = char.inventory.findIndex(i => i.toLowerCase() === item.toLowerCase());
-      if (idx === -1) {
-        await interaction.editReply(createEmbed({
+  const obj = char.inventory.find(i => i.nome.toLowerCase() === item.toLowerCase());
+  if (!obj) {
+    await interaction.editReply(createEmbed({
       title: "❌ Oggetto non trovato",
-      description: `L'oggetto **${item}** non è presente nell'inventario di **${char.name}**.`,
+      description: `**${item}** non è presente nell'inventario di **${char.name}**.`,
       color: 0xff0000
     }));
     return;
-      }
+  }
 
-      const removed = char.inventory.splice(idx, 1)[0];
-      await char.save();
+  obj.quantita -= quantita;
+  if (obj.quantita <= 0) {
+    char.inventory = char.inventory.filter(i => i.nome.toLowerCase() !== item.toLowerCase());
+  }
 
-      await interaction.editReply(createEmbed({
+  await char.save();
+
+  await interaction.editReply(createEmbed({
     title: "🗑️ Oggetto rimosso",
-    description: `Rimosso **${removed}** dall'inventario di **${char.name}**.`,
+    description: `Rimossi **${quantita}x ${item}** dall'inventario di **${char.name}**.`,
     color: 0x00ff99
   }));
   return;
-    }
+}
 
 /* ---------- ADVANTAGE ---------- */
 if (interaction.commandName === "advantage") {
@@ -1156,61 +1176,69 @@ if (interaction.commandName === "help") {
 
 
     /* ---------- GIVE ---------- */
-    if (interaction.commandName === "give") {
-      await interaction.deferReply();
+   if (interaction.commandName === "give") {
+  await interaction.deferReply();
 
-      const fromUser = interaction.user;
-      const fromName = interaction.options.getString("from_name");
-      const toUser = interaction.options.getUser("to_user");
-      const toName = interaction.options.getString("to_name");
-      const item = interaction.options.getString("item");
+  const fromUser = interaction.user;
+  const fromName = interaction.options.getString("from_name");
+  const toUser = interaction.options.getUser("to_user");
+  const toName = interaction.options.getString("to_name");
+  const item = interaction.options.getString("item");
+  const quantita = interaction.options.getInteger("quantita");
 
-      const fromChar = await Character.findOne({ userId: fromUser.id, name: fromName });
-      if (!fromChar) {
-         await interaction.editReply(createEmbed({
+  const fromChar = await Character.findOne({ userId: fromUser.id, name: fromName });
+  if (!fromChar) {
+    await interaction.editReply(createEmbed({
       title: "❌ Personaggio non trovato",
       description: `**${fromName}** non trovato nei tuoi personaggi.`,
       color: 0xff0000
     }));
     return;
-      }
+  }
 
-      if (!Array.isArray(fromChar.inventory)) fromChar.inventory = [];
-
-      const idx = fromChar.inventory.findIndex(i => i.toLowerCase() === item.toLowerCase());
-      if (idx === -1) {
-         await interaction.editReply(createEmbed({
-      title: "❌ Oggetto non trovato",
-      description: `Il tuo personaggio **${fromChar.name}** non possiede l'oggetto **${item}**.`,
+  const obj = fromChar.inventory.find(i => i.nome.toLowerCase() === item.toLowerCase());
+  if (!obj || obj.quantita < quantita) {
+    await interaction.editReply(createEmbed({
+      title: "❌ Oggetto non disponibile",
+      description: `**${fromChar.name}** non possiede abbastanza **${item}**.`,
       color: 0xff0000
     }));
     return;
-      }
+  }
 
-      const removed = fromChar.inventory.splice(idx, 1)[0];
-      await fromChar.save();
+  obj.quantita -= quantita;
+  if (obj.quantita <= 0) {
+    fromChar.inventory = fromChar.inventory.filter(i => i.nome.toLowerCase() !== item.toLowerCase());
+  }
+  await fromChar.save();
 
-      const toChar = await Character.findOne({ userId: toUser.id, name: toName });
-      if (!toChar) {
-        await interaction.editReply(createEmbed({
+  const toChar = await Character.findOne({ userId: toUser.id, name: toName });
+  if (!toChar) {
+    await interaction.editReply(createEmbed({
       title: "❌ Personaggio non trovato",
       description: `**${toName}** non trovato per ${toUser.username}.`,
       color: 0xff0000
     }));
     return;
-      }
+  }
 
-      if (!Array.isArray(toChar.inventory)) toChar.inventory = [];
-      toChar.inventory.push(removed);
-      await toChar.save();
+  const targetObj = toChar.inventory.find(i => i.nome.toLowerCase() === item.toLowerCase());
+  if (targetObj) {
+    targetObj.quantita += quantita;
+  } else {
+    toChar.inventory.push({ nome: item, quantita });
+  }
 
-    await interaction.editReply(createEmbed({
+  await toChar.save();
+
+  await interaction.editReply(createEmbed({
     title: "🎁 Oggetto trasferito",
-    description: `**${fromChar.name}** ha dato **${removed}** a **${toChar.name}** (di ${toUser.username}).`,
+    description: `**${fromChar.name}** ha dato **${quantita}x ${item}** a **${toChar.name}** (di ${toUser.username}).`,
     color: 0x00ff99
   }));
   return;
-    }
+}
+
 
   } catch (err) {
     console.error("❌ Errore in interactionCreate:", err);
@@ -1226,6 +1254,7 @@ if (interaction.commandName === "help") {
 
 /* ======================= LOGIN ======================= */
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
