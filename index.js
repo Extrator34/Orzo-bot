@@ -900,9 +900,9 @@ if (interaction.commandName === "show") {
   else color = 0x808080; // fallback
 
   // Inventario e vantaggi
-  const inventarioText = char.inventory?.length
-    ? char.inventory.join("\n ")
-    : "Vuoto";
+const inventarioText = char.inventory?.length
+  ? char.inventory.map(i => `• ${i.nome} × ${i.quantita}`).join("\n")
+  : "Vuoto";
 
   const vantaggiText = char.vantaggi?.length
     ? char.vantaggi
@@ -1254,6 +1254,7 @@ if (interaction.commandName === "help") {
 
 /* ======================= LOGIN ======================= */
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
