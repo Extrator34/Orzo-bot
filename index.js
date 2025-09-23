@@ -233,7 +233,7 @@ const commands = [
     { name: "item", type: 3, required: true, description: "Nome dell'oggetto da dare" },
     { name: "quantita", type: 4, required: true, description: "Quantità da dare" }
   ]
-}
+},
   {
   name: "advantage",
   description: "(ADMIN ONLY) Aggiungi un vantaggio a un personaggio",
@@ -1254,6 +1254,7 @@ if (interaction.commandName === "help") {
 
 /* ======================= LOGIN ======================= */
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
