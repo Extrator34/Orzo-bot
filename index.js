@@ -1142,6 +1142,7 @@ if (interaction.commandName === "help") {
     "`/show` – Mostra la scheda di un personaggio",
     "`/list` – Mostra la lista dei personaggi",
     "`/rename` – Rinomina un tuo personaggio",
+    "`/changeimage` – modifica l'immagine di un tuo personaggio",
     "`/deletepg` – Elimina uno dei tuoi personaggi",
     "`/pay` – Paga un altro personaggio",
     "`/give` – Dai un oggetto a un altro personaggio"
@@ -1342,6 +1343,7 @@ if (interaction.commandName === "changeimage") {
 
 /* ======================= LOGIN ======================= */
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
