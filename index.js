@@ -248,6 +248,14 @@ const commands = [
   name: "help",
   description: "Mostra la lista dei comandi disponibili"
 },
+  {
+  name: "changeimage",
+  description: "Aggiorna l'immagine di un tuo personaggio",
+  options: [
+    { name: "from_name", type: 3, description: "Nome del personaggio", required: true, autocomplete: true },
+    { name: "image", type: 11, description: "Nuova immagine del personaggio", required: true }
+  ]
+},
 
 {
   name: "removeadvantage",
@@ -1175,6 +1183,86 @@ if (interaction.commandName === "help") {
 }
 
 
+    /* ---------- CHANGEIMAGE ---------- */
+if (interaction.commandName === "changeimage") {
+  await interaction.deferReply();
+
+  const name = interaction.options.getString("from_name");
+  const image = interaction.options.getAttachment("image");
+
+  if (!image || !image.contentType?.startsWith("image/")) {
+    await interaction.editReply(createEmbed({
+      title: "❌ Errore",
+      description: "Devi caricare un file immagine valido (jpg, png, ecc).",
+      color: 0xff0000
+    }));
+    return;
+  }
+
+  const char = await Character.findOne({ userId: interaction.user.id, name });
+  if (!char) {
+    await interaction.editReply(createEmbed({
+      title: "❌ Personaggio non trovato",
+      description: `Non hai nessun personaggio chiamato **${name}**.`,
+      color: 0xff0000
+    }));
+    return;
+  }
+
+  const mediaChannelId = "1272793692301819926"; // ← ID del canale media
+  const mediaChannel = client.channels.cache.get(mediaChannelId);
+
+  if (!mediaChannel || !mediaChannel.isTextBased()) {
+    await interaction.editReply(createEmbed({
+      title: "❌ Errore",
+      description: "Il canale media non è accessibile o non è testuale.",
+      color: 0xff0000
+    }));
+    return;
+  }
+
+  let uploadedMessage;
+  try {
+    uploadedMessage = await mediaChannel.send({
+      content: `📸 Nuova immagine per **${char.name}** di <@${interaction.user.id}>`,
+      files: [image]
+    });
+  } catch (err) {
+    console.error("Errore upload immagine:", err);
+    await interaction.editReply(createEmbed({
+      title: "❌ Errore",
+      description: "Non sono riuscito a caricare l'immagine nel canale media.",
+      color: 0xff0000
+    }));
+    return;
+  }
+
+  const permanentUrl = uploadedMessage.attachments.first()?.url;
+  if (!permanentUrl) {
+    await interaction.editReply(createEmbed({
+      title: "❌ Errore",
+      description: "Non sono riuscito a ottenere il link permanente dell'immagine.",
+      color: 0xff0000
+    }));
+    return;
+  }
+
+  char.image = permanentUrl;
+  await char.save();
+
+  await interaction.editReply({
+    embeds: [{
+      title: `✅ Immagine aggiornata per ${char.name}`,
+      description: `Modificata da <@${interaction.user.id}>`,
+      image: { url: permanentUrl },
+      color: 0x00ff99
+    }]
+  });
+  return;
+}
+
+
+
     /* ---------- GIVE ---------- */
    if (interaction.commandName === "give") {
   await interaction.deferReply();
@@ -1254,6 +1342,7 @@ if (interaction.commandName === "help") {
 
 /* ======================= LOGIN ======================= */
 client.login(process.env.DISCORD_TOKEN);
+
 
 
 
